@@ -7,7 +7,7 @@
 
 ## 0. 프로젝트 셋업
 
-- [ ] Python 가상환경 생성
+- [x] Python 가상환경 생성
 - [ ] `requirements.txt`(또는 `pyproject.toml`) 초기화 — FastAPI, Uvicorn 포함
 - [ ] FastAPI 기본 프로젝트 구조 생성 (`routers` / `services` / `repositories` / `schemas` / `models` / `config`)
 - [ ] `pydantic-settings` 기반 config 모듈 작성 (DB 접속 정보, 정상/주의 기준값 등 설정값 자리 마련)
