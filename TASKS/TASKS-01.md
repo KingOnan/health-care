@@ -12,7 +12,7 @@
 - [x] FastAPI 기본 프로젝트 구조 생성 (`routers` / `services` / `repositories` / `schemas` / `models` / `config`)
 - [x] `pydantic-settings` 기반 config 모듈 작성 (DB 접속 정보, 정상/주의 기준값 등 설정값 자리 마련)
 - [x] `.env`, `.env.example`, `.gitignore` 작성
-- [ ] `black` / `ruff` / `mypy` 설정 파일 작성
+- [x] `black` / `ruff` / `mypy` 설정 파일 작성
 - [ ] Git 저장소 초기화 및 첫 커밋
 
 ## 1. DB 설계 및 연결

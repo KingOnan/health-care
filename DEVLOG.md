@@ -57,3 +57,26 @@
   - `backend/.env.example`, `backend/.env` 작성 (settings.py 필드에 대응하는 키)
 - Note : `.env`는 Git에 안 올라가고 `.env.example`만 커밋됨
 - Spring : `application-local.yml`(gitignore 대상) vs 값 없는 견본 파일 구분과 동일
+
+### black / ruff / mypy 설정 파일 작성
+
+- What : 포맷터(black) / 린터(ruff) / 타입 체커(mypy)
+- Why : 스타일 통일, 잠재적 버그 사전 발견, 타입 힌트 검증
+- Do
+  - `pip install black ruff mypy`
+  - `backend/pyproject.toml`에 세 도구 설정 작성
+  - `black app` / `ruff check app` / `mypy app` 실행해 통과 확인
+- Note : mypy가 `Settings()` 호출을 오인식해서 에러 남 → `# type: ignore[call-arg]`로 처리 (pydantic-settings의 알려진 제약)
+- Spring : black=IntelliJ 자동 포맷/Spotless, ruff=Checkstyle/PMD, mypy=`javac`가 공짜로 해주는 타입 검사를 Python에서 흉내
+
+### 자동 실행 트리거 추가 (에디터 + pre-commit)
+
+- What : 저장 시 자동 포맷(에디터), 커밋 시 자동 검사(pre-commit)
+- Why : 규칙 파일만 있으면 사람이 깜빡하고 안 돌릴 수 있음. 자동 트리거로 실수 방지
+- Do
+  - `.vscode/settings.json` — 인터프리터 지정, 저장 시 black 포맷 + import 정리
+  - `.vscode/extensions.json` — 추천 확장(black/ruff/mypy) 목록
+  - `.gitignore`에서 `.vscode/` 제외 항목 삭제 (팀 공용 설정이라 커밋해야 함)
+  - `pip install pre-commit`, `.pre-commit-config.yaml` 작성
+- Note : `pre-commit install`(실제 훅 연결)은 Git 저장소 초기화 이후에 진행 (git이 있어야 훅을 걸 수 있음)
+- Spring : `.vscode/settings.json`은 팀 공유 IDE 설정, pre-commit은 Git 훅으로 커밋 전 강제 검사

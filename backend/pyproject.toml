@@ -1,0 +1,19 @@
+# black 설정 (자동 포맷터)
+[tool.black]
+line-length = 88  # 한 줄 최대 글자 수, 넘으면 자동으로 줄바꿈
+
+# ruff 설정 (린터, 문제 있는 코드 잡아냄)
+[tool.ruff]
+line-length = 88  # black과 동일하게 맞춰서 서로 충돌 안 나게 함
+
+[tool.ruff.lint]
+# 어떤 종류의 검사를 켤지 선택
+# E = 코드 스타일 오류 (pycodestyle)
+# F = 실제 버그 가능성 (안 쓰는 import, 정의 안 된 변수 등, pyflakes)
+# I = import 순서 정리 (isort 역할)
+select = ["E", "F", "I"]
+
+# mypy 설정 (타입 체커)
+[tool.mypy]
+python_version = "3.11"  # 이 파이썬 버전 기준으로 문법을 검사
+disallow_untyped_defs = true  # 함수에 타입 힌트가 없으면 에러로 처리 (CLAUDE.md 4.1 규칙)
