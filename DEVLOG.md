@@ -26,3 +26,14 @@
   - `pip freeze > requirements.txt`로 저장
 - Note : 지금은 1차에 필요한 패키지만. LangChain/DB 등은 해당 단계에서 추가
 - Spring : `pom.xml`/`build.gradle` 의존성 목록과 동일 역할
+
+### FastAPI 기본 프로젝트 구조 생성
+
+- What : routers/services/repositories/schemas/models/config 폴더 분리
+- Why : 라우터에 비즈니스 로직이 뒤섞이지 않게 계층 분리
+- Do
+  - `app/` 아래 각 폴더 + `__init__.py` 생성
+  - `main.py`에 최소 FastAPI 앱 + `/health` 엔드포인트 작성
+- Note : 지금은 빈 껍데기. `config` 내용은 다음 항목에서 채움
+- 검증 : `uvicorn app.main:app --reload` 실행 후 `/health`에서 `{"status":"ok"}` 응답 확인
+- Spring : Controller-Service-Repository-DTO-Entity 계층 구조와 동일
