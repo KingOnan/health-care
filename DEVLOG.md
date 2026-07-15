@@ -16,3 +16,13 @@
   - `python -m venv venv`로 생성
   - VSCode 인터프리터로 지정
 - Note : `venv/`는 용량 크고 재사용 불가하므로 Git에 커밋하지 않음
+
+### requirements.txt 초기화
+
+- What : 프로젝트 필요 패키지·버전 목록 파일
+- Why : 다른 환경에서도 동일하게 재현 설치 가능하게 하기 위함
+- Do
+  - `pip install fastapi "uvicorn[standard]"`로 설치
+  - `pip freeze > requirements.txt`로 저장
+- Note : 지금은 1차에 필요한 패키지만. LangChain/DB 등은 해당 단계에서 추가
+- Spring : `pom.xml`/`build.gradle` 의존성 목록과 동일 역할
