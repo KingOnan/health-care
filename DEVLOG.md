@@ -31,6 +31,13 @@
 
 - What : routers/services/repositories/schemas/models/config 폴더 분리
 - Why : 라우터에 비즈니스 로직이 뒤섞이지 않게 계층 분리
+- 폴더 역할
+  - `routers` : HTTP 요청 받고 응답 반환 (Spring Controller)
+  - `services` : 실제 비즈니스 로직 (Spring Service)
+  - `repositories` : DB 쿼리 담당 (Spring Repository)
+  - `schemas` : API 요청/응답 데이터 모양 검증 (Pydantic, Spring DTO)
+  - `models` : DB 테이블과 매핑되는 ORM 클래스 (Spring Entity)
+  - `config` : 설정값 중앙 관리
 - Do
   - `app/` 아래 각 폴더 + `__init__.py` 생성
   - `main.py`에 최소 FastAPI 앱 + `/health` 엔드포인트 작성

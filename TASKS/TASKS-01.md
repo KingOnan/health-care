@@ -17,7 +17,7 @@
 
 ## 1. DB 설계 및 연결
 
-- [ ] PostgreSQL/MySQL 중 선택, 로컬 개발용 DB 구동 환경 구성 (예: Docker Compose)
+- [ ] MySQL - 로컬 개발용 DB 구동 환경 구성 (예: Docker Compose)
 - [ ] ORM(SQLAlchemy 등) 설정 및 DB 연결 확인
 - [ ] 마이그레이션 도구(Alembic 등) 설정
 - [ ] `User` 테이블 설계 (부모님 계정 / 데모 계정 구분 필드 포함)
