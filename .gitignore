@@ -1,0 +1,16 @@
+# --- backend (Python) ---
+backend/venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+backend/.env
+
+# --- frontend (추후 추가 예정) ---
+# node_modules/
+# dist/
+
+# --- IDE / OS ---
+.vscode/
+.DS_Store

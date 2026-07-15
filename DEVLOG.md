@@ -47,3 +47,13 @@
   - `app/config/settings.py`에 `Settings(BaseSettings)` 작성, `settings` 인스턴스 export
 - Note : DB는 MySQL로 결정 (`mysql+pymysql://...`). 값은 하드코딩하지 않고 전부 `.env`에서만 관리 (기본값 있으면 값이 두 곳에 있어 헷갈림)
 - Spring : `application.yml` + `@ConfigurationProperties`와 동일 역할
+
+### .env, .env.example, .gitignore 작성
+
+- What : 실제 비밀값(.env) / 값 없는 견본(.env.example) / Git 추적 제외 목록(.gitignore)
+- Why : 비밀값이 Git 히스토리에 남아 유출되는 것 방지
+- Do
+  - 루트에 `.gitignore` 작성 (`backend/venv/`, `.env` 등 제외)
+  - `backend/.env.example`, `backend/.env` 작성 (settings.py 필드에 대응하는 키)
+- Note : `.env`는 Git에 안 올라가고 `.env.example`만 커밋됨
+- Spring : `application-local.yml`(gitignore 대상) vs 값 없는 견본 파일 구분과 동일
