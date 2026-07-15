@@ -80,3 +80,15 @@
   - `pip install pre-commit`, `.pre-commit-config.yaml` 작성
 - Note : `pre-commit install`(실제 훅 연결)은 Git 저장소 초기화 이후에 진행 (git이 있어야 훅을 걸 수 있음)
 - Spring : `.vscode/settings.json`은 팀 공유 IDE 설정, pre-commit은 Git 훅으로 커밋 전 강제 검사
+
+### Git 저장소 초기화 및 첫 커밋
+
+- What : 로컬 저장소 생성 + GitHub 원격 저장소 연결 + 커밋
+- Why : 면접관이 이력을 볼 수 있어야 하므로 원격 저장소를 처음부터 연결. 기능 단위로 커밋해야 이력이 잘 보임
+- Do
+  - `git init`, `git branch -M main`
+  - `git remote add origin https://github.com/KingOnan/health-care.git`
+  - `pre-commit install`로 훅 연결
+  - 체크리스트 항목 단위로 커밋 분리
+  - `git push -u origin main`
+- Note : GitHub 저장소는 README/.gitignore/license 전부 비운 채로 생성 (로컬에 이미 있어서 충돌 방지)
