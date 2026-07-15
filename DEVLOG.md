@@ -37,3 +37,13 @@
 - Note : 지금은 빈 껍데기. `config` 내용은 다음 항목에서 채움
 - 검증 : `uvicorn app.main:app --reload` 실행 후 `/health`에서 `{"status":"ok"}` 응답 확인
 - Spring : Controller-Service-Repository-DTO-Entity 계층 구조와 동일
+
+### pydantic-settings 기반 config 모듈 작성
+
+- What : DB 접속 정보, 혈압/혈당 기준값 등을 모아둔 `Settings` 클래스
+- Why : 기준값 하드코딩 방지, 나중에 값만 바꿔서 대응 가능하게
+- Do
+  - `pip install pydantic-settings`
+  - `app/config/settings.py`에 `Settings(BaseSettings)` 작성, `settings` 인스턴스 export
+- Note : DB는 MySQL로 결정 (`mysql+pymysql://...`). 값은 하드코딩하지 않고 전부 `.env`에서만 관리 (기본값 있으면 값이 두 곳에 있어 헷갈림)
+- Spring : `application.yml` + `@ConfigurationProperties`와 동일 역할
