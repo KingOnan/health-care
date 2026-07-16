@@ -16,3 +16,6 @@ backend/.env
 
 # --- Claude Code (개인 로컬 설정) ---
 .claude/settings.local.json
+
+# --- 개인용 기획/작업 문서 (Claude와의 대화·계획용, 저장소에는 비공개) ---
+mds/
