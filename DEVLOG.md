@@ -99,3 +99,25 @@
   - 체크리스트 항목 단위로 커밋 분리
   - `git push -u origin main`
 - Note : GitHub 저장소는 README/.gitignore/license 전부 비운 채로 생성 (로컬에 이미 있어서 충돌 방지)
+
+## 1. DB 설계 및 연결
+
+### MySQL 로컬 개발 환경 구성 (Docker Compose)
+
+- What : Docker Compose로 MySQL 컨테이너를 띄워서 로컬 개발용 DB로 사용
+- Why : 팀원/배포 환경과 DB 버전·설정을 동일하게 맞춰 "로컬은 되는데 배포는 안 되는" 문제 예방 (실무 조사 결과 표준 방식)
+- Do
+  - `backend/docker-compose.yml` 작성 (MySQL 8.4, `.env`와 동일한 계정/DB명, `utf8mb4` 문자셋)
+  - `docker compose up -d`로 실행
+  - `docker exec`로 접속 테스트
+- Note : 계정 정보는 `docker-compose.yml`(환경변수)과 `.env`(DATABASE_URL) 두 곳에 각각 적어야 하며 값이 반드시 일치해야 함 (현재 `user`/`user`로 통일)
+
+### ORM(SQLAlchemy) 설정 및 DB 연결 확인
+
+- What : SQLAlchemy ORM 방식으로 MySQL에 접속하는 연결 통로(`engine`/`SessionLocal`/`Base`) 구성
+- Why : 앱 코드가 아직 MySQL에 접속하는 방법이 없어서, 이후 테이블/CRUD 작업의 기반을 마련
+- Do
+  - `pip install sqlalchemy pymysql cryptography` (pymysql=드라이버, cryptography=MySQL 8 기본 인증 방식에 필요)
+  - `app/database.py`에 `engine`, `SessionLocal`, `Base`, `get_db()` 작성
+  - `SELECT 1` 쿼리로 실제 연결 확인
+- Spring : `engine`=DataSource, `SessionLocal`=EntityManager, `get_db()`=요청마다 세션 열고 닫는 것(OSIV와 유사)

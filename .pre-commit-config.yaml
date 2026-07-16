@@ -15,4 +15,4 @@ repos:
     hooks:
       - id: mypy
         args: ["--config-file=backend/pyproject.toml"]
-        additional_dependencies: [fastapi, pydantic, pydantic-settings]
+        additional_dependencies: [fastapi, pydantic, pydantic-settings, sqlalchemy]

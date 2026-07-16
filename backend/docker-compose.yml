@@ -1,0 +1,39 @@
+# 이 컴포즈 프로젝트의 이름 (Docker Desktop에서 그룹으로 묶여 보이는 이름)
+name: health-care
+
+# 띄울 컨테이너들 목록
+services:
+  # 서비스 이름(별칭). 이후 앱 코드에서 이 이름으로 접근 가능
+  mysql:
+    # 어떤 이미지(설계도)로 컨테이너를 만들지
+    image: mysql:8.4
+    # 컨테이너의 실제 이름 (Docker Desktop 목록에 보이는 이름)
+    container_name: health-care-mysql
+    # 자동으로 켜지지 않게. 직접 실행/중지할 때만 동작 (Docker Desktop 자동 실행도 꺼둔 상태와 맞춤)
+    restart: "no"
+
+    # 컨테이너 안에 심어줄 환경변수 (MySQL 이미지가 이 값들을 보고 초기 계정을 만듦)
+    environment:
+      # 관리자(root) 계정 비밀번호
+      MYSQL_ROOT_PASSWORD: root
+      # 처음 생성할 데이터베이스 이름
+      MYSQL_DATABASE: health_care
+      # 앱이 사용할 일반 계정
+      MYSQL_USER: user
+      # 그 계정의 비밀번호 (backend/.env의 DATABASE_URL과 반드시 일치해야 함)
+      MYSQL_PASSWORD: user
+
+    # "내 컴퓨터 포트:컨테이너 포트" — 내 컴퓨터의 3306으로 접속하면 컨테이너 안 3306으로 연결됨
+    ports:
+      - "3306:3306"
+
+    # 한글 저장 시 깨지지 않도록 문자셋을 utf8mb4로 지정
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+
+    # 컨테이너를 지워도 데이터는 남도록, 실제 데이터를 컨테이너 밖(volume)에 저장
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+# 위에서 쓴 볼륨을 여기서 선언 (Docker가 관리하는 저장공간)
+volumes:
+  mysql_data:
