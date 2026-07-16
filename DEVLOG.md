@@ -121,3 +121,13 @@
   - `app/database.py`에 `engine`, `SessionLocal`, `Base`, `get_db()` 작성
   - `SELECT 1` 쿼리로 실제 연결 확인
 - Spring : `engine`=DataSource, `SessionLocal`=EntityManager, `get_db()`=요청마다 세션 열고 닫는 것(OSIV와 유사)
+
+### 마이그레이션 도구(Alembic) 설정
+
+- What : DB 스키마 변경 이력을 버전 관리되는 파일로 기록/적용/되돌리기 하는 도구
+- Why : 테이블 구조 변경을 SQL로 손으로 하면 이력 추적이 안 되고 배포 환경에 반영 누락 위험. 변경마다 마이그레이션 파일로 남겨서 어디서든 동일하게 적용
+- Do
+  - `pip install alembic`
+  - `alembic init alembic` — `backend/alembic/`, `alembic.ini` 생성
+  - `env.py`에서 `app.database`의 `Base`, `app.config.settings`의 `settings.database_url` 연결 (`target_metadata`, `sqlalchemy.url`)
+  - `alembic current`로 연결 확인
