@@ -1,0 +1,62 @@
+@import "tailwindcss";
+
+@theme {
+  /* 색상 — 이름으로 정의해두고 화면에서는 이 이름만 사용 */
+  --color-primary: #3d8484;
+  --color-primary-dark: #346969;
+  --color-low: #2858dc; /* 저혈압/저혈당 등 "낮음" 판정 */
+  --color-low-bg: #ffffff;
+  --color-caution: #da8f1f; /* 정상과 고혈압 사이 "주의" 판정 */
+  --color-caution-bg: #ffffff;
+  --color-warning: #dc2626;
+  --color-warning-bg: #ffffff;
+  --color-surface: #ffffff;
+  --color-page-bg: #f4f9f9;
+  --color-text: #0f172a;
+  --color-text-muted: #374151; /* 보조 글자색 (기존 회색이 너무 연해서 진하게 변경) */
+  --color-border: #3d8484;
+
+  /* 글씨 크기 — 어르신 사용성 고려해 기본 웹 표준보다 큼 */
+  /* ⚠️ 규칙: 이 앱에서 20px(text-body) 미만 크기는 어디서도 쓰지 않는다 (text-sm, text-xs 사용 금지) */
+  --text-body: 1.25rem; /* 20px, 일반 본문 */
+  --text-lg: 1.375rem; /* 22px, 강조 본문 */
+  --text-heading: 1.5rem; /* 24px, 화면 제목 */
+  --text-xl: 1.625rem; /* 26px */
+  --text-2xl: 1.75rem; /* 28px */
+  --text-display: 1.875rem; /* 30px, 복용률 같은 큰 숫자 */
+
+  /* 버튼/터치 영역 최소 높이는 Tailwind 기본값 h-14(=56px)를 그대로 사용 */
+}
+
+/* 메뉴(도메인)별 대표 색상 — 페이지 루트에 클래스로 붙여서 --color-primary/--color-border만 교체 */
+.theme-supplement {
+  --color-primary: #3d8484;
+  --color-border: #3d8484;
+}
+.theme-medication {
+  --color-primary: #3268b3;
+  --color-border: #3268b3;
+}
+.theme-bp {
+  --color-primary: #71548c;
+  --color-border: #71548c;
+}
+.theme-glucose {
+  --color-primary: #2e884c;
+  --color-border: #2e884c;
+}
+
+body {
+  margin: 0;
+  background: var(--color-page-bg);
+  color: var(--color-text);
+  font-size: var(--text-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+#root {
+  max-width: 480px; /* 모바일 폭 기준 (데스크톱에서도 폰처럼 보이게 가운데 정렬) */
+  margin: 0 auto;
+  min-height: 100svh;
+  background: var(--color-page-bg);
+}
