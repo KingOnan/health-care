@@ -1,10 +1,10 @@
 # black 설정 (자동 포맷터)
 [tool.black]
-line-length = 88  # 한 줄 최대 글자 수, 넘으면 자동으로 줄바꿈
+line-length = 120  # 한 줄 최대 글자 수, 넘으면 자동으로 줄바꿈
 
 # ruff 설정 (린터, 문제 있는 코드 잡아냄)
 [tool.ruff]
-line-length = 88  # black과 동일하게 맞춰서 서로 충돌 안 나게 함
+line-length = 120  # black과 동일하게 맞춰서 서로 충돌 안 나게 함
 
 [tool.ruff.lint]
 # 어떤 종류의 검사를 켤지 선택
