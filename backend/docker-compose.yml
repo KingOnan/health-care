@@ -23,9 +23,9 @@ services:
       # 그 계정의 비밀번호 (backend/.env의 DATABASE_URL과 반드시 일치해야 함)
       MYSQL_PASSWORD: user
 
-    # "내 컴퓨터 포트:컨테이너 포트" — 내 컴퓨터의 3306으로 접속하면 컨테이너 안 3306으로 연결됨
+    # "내 컴퓨터 포트:컨테이너 포트" — Windows가 3306을 포함한 포트 구간을 예약해놔서 3400으로 변경
     ports:
-      - "3306:3306"
+      - "3400:3306"
 
     # 한글 저장 시 깨지지 않도록 문자셋을 utf8mb4로 지정
     command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
