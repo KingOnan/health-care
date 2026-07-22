@@ -19,3 +19,10 @@ class EatStatus(str, enum.Enum):
 class CheckTiming(str, enum.Enum):
     EMPTY = "공복"
     AFTER_2H = "식후 2시간"
+
+
+# 약, 영양제 하루 복용 체크 상태
+class CheckStatus(str, enum.Enum):
+    UNCHECKED = "미확인"
+    DONE = "복용완료"
+    SKIPPED = "건너뛰기"
