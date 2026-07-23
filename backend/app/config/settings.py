@@ -18,5 +18,10 @@ class Settings(BaseSettings):
     blood_sugar_fasting_normal_max: int
     blood_sugar_post_meal_normal_max: int
 
+    # JWT 인증
+    jwt_secret_key: str
+    jwt_algorithm: str
+    jwt_access_token_expire_minutes: int
+
 
 settings = Settings()  # type: ignore[call-arg]  # 값은 .env에서 자동으로 채워짐
