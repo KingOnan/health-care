@@ -11,3 +11,11 @@ class LoginRequest(BaseModel):
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
+
+
+# 로그인한 유저 정보 응답
+class UserResponse(BaseModel):
+    user_seq: int
+    user_id: str
+    user_name: str
+    is_demo: bool
