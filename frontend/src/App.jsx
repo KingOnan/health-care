@@ -22,6 +22,7 @@ import BloodSugarManage from "./pages/BloodSugarManage";
 import BloodSugarStats from "./pages/BloodSugarStats";
 import BloodSugarReference from "./pages/BloodSugarReference";
 import Chatbot from "./pages/Chatbot";
+import Settings from "./pages/Settings";
 
 function App() {
   const location = useLocation();
@@ -230,6 +231,14 @@ function App() {
           element={
             <PageTransition>
               <Chatbot />
+            </PageTransition>
+          }
+        />
+        <Route
+          path="/settings"
+          element={
+            <PageTransition>
+              <Settings />
             </PageTransition>
           }
         />

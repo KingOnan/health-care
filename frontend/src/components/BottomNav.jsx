@@ -1,4 +1,4 @@
-import { Pill, PillBottle, HeartPulse, Droplet } from "lucide-react";
+import { Pill, PillBottle, HeartPulse, Droplet, Settings } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const NAV_ITEMS = [
@@ -6,6 +6,7 @@ const NAV_ITEMS = [
   { key: "medication", label: "약", Icon: Pill, route: "/medication" },
   { key: "bp", label: "혈압", Icon: HeartPulse, route: "/blood-pressure" },
   { key: "glucose", label: "혈당", Icon: Droplet, route: "/blood-sugar" },
+  { key: "settings", label: "설정", Icon: Settings, route: "/settings" },
 ];
 
 function BottomNav({ active = "bp" }) {
