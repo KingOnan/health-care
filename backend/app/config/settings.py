@@ -23,5 +23,8 @@ class Settings(BaseSettings):
     jwt_algorithm: str
     jwt_access_token_expire_minutes: int
 
+    # CORS 허용 origin (쉼표로 여러 개 구분 가능)
+    cors_allowed_origins: str
+
 
 settings = Settings()  # type: ignore[call-arg]  # 값은 .env에서 자동으로 채워짐
