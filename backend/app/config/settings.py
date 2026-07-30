@@ -6,6 +6,7 @@ class Settings(BaseSettings):
 
     # DB
     database_url: str
+    database_echo: bool = False  # True면 실행되는 모든 SQL을 로그에 출력 (개발용)
 
     # 타임존 (날짜 판정은 항상 KST 고정)
     timezone: str
