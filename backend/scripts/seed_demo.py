@@ -1,10 +1,11 @@
 # 데모 계정 + 샘플 데이터(영양제/약 5개씩, 최근 50일치 복용 기록/혈압/혈당) 시딩 스크립트
 # 실행: backend 폴더에서 `python -m scripts.seed_demo`
+import asyncio
 import random
 from datetime import date, datetime, time, timedelta
 
 from sqlalchemy import delete, select
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import SessionLocal
 from app.models.blood_pressure_record import BloodPressureRecord
@@ -107,47 +108,54 @@ MEDICATION_SAMPLES = [
 
 
 # 기존 데모 계정과 딸린 데이터를 전부 삭제 (자식 테이블부터 역순으로)
-def delete_existing_demo(db: Session) -> None:
-    existing_user = db.scalar(select(User).where(User.user_id == DEMO_USER_ID))
+async def delete_existing_demo(db: AsyncSession) -> None:
+    existing_user = await db.scalar(select(User).where(User.user_id == DEMO_USER_ID))
     if existing_user is None:
         return
 
-    supplement_item_seqs = db.scalars(
-        select(SupplementItem.supplement_item_seq).where(SupplementItem.user_seq == existing_user.user_seq)
-    ).all()
-    supplement_schedule_seqs = db.scalars(
-        select(SupplementSchedule.supplement_schedule_seq).where(
-            SupplementSchedule.supplement_item_seq.in_(supplement_item_seqs)
+    supplement_item_seqs = (
+        await db.scalars(
+            select(SupplementItem.supplement_item_seq).where(SupplementItem.user_seq == existing_user.user_seq)
         )
     ).all()
-    medication_item_seqs = db.scalars(
-        select(MedicationItem.medication_item_seq).where(MedicationItem.user_seq == existing_user.user_seq)
+    supplement_schedule_seqs = (
+        await db.scalars(
+            select(SupplementSchedule.supplement_schedule_seq).where(
+                SupplementSchedule.supplement_item_seq.in_(supplement_item_seqs)
+            )
+        )
     ).all()
-    medication_schedule_seqs = db.scalars(
-        select(MedicationSchedule.medication_schedule_seq).where(
-            MedicationSchedule.medication_item_seq.in_(medication_item_seqs)
+    medication_item_seqs = (
+        await db.scalars(
+            select(MedicationItem.medication_item_seq).where(MedicationItem.user_seq == existing_user.user_seq)
+        )
+    ).all()
+    medication_schedule_seqs = (
+        await db.scalars(
+            select(MedicationSchedule.medication_schedule_seq).where(
+                MedicationSchedule.medication_item_seq.in_(medication_item_seqs)
+            )
         )
     ).all()
 
-    db.execute(delete(SupplementLog).where(SupplementLog.supplement_schedule_seq.in_(supplement_schedule_seqs)))
-    db.execute(delete(SupplementSchedule).where(SupplementSchedule.supplement_item_seq.in_(supplement_item_seqs)))
-    db.execute(delete(SupplementItem).where(SupplementItem.user_seq == existing_user.user_seq))
+    await db.execute(delete(SupplementLog).where(SupplementLog.supplement_schedule_seq.in_(supplement_schedule_seqs)))
+    await db.execute(delete(SupplementSchedule).where(SupplementSchedule.supplement_item_seq.in_(supplement_item_seqs)))
+    await db.execute(delete(SupplementItem).where(SupplementItem.user_seq == existing_user.user_seq))
 
-    db.execute(delete(MedicationLog).where(MedicationLog.medication_schedule_seq.in_(medication_schedule_seqs)))
-    db.execute(delete(MedicationSchedule).where(MedicationSchedule.medication_item_seq.in_(medication_item_seqs)))
-    db.execute(delete(MedicationItem).where(MedicationItem.user_seq == existing_user.user_seq))
+    await db.execute(delete(MedicationLog).where(MedicationLog.medication_schedule_seq.in_(medication_schedule_seqs)))
+    await db.execute(delete(MedicationSchedule).where(MedicationSchedule.medication_item_seq.in_(medication_item_seqs)))
+    await db.execute(delete(MedicationItem).where(MedicationItem.user_seq == existing_user.user_seq))
 
-    db.execute(delete(BloodPressureRecord).where(BloodPressureRecord.user_seq == existing_user.user_seq))
-    db.execute(delete(BloodSugarRecord).where(BloodSugarRecord.user_seq == existing_user.user_seq))
-    db.execute(delete(User).where(User.user_seq == existing_user.user_seq))
-    db.commit()
+    await db.execute(delete(BloodPressureRecord).where(BloodPressureRecord.user_seq == existing_user.user_seq))
+    await db.execute(delete(BloodSugarRecord).where(BloodSugarRecord.user_seq == existing_user.user_seq))
+    await db.execute(delete(User).where(User.user_seq == existing_user.user_seq))
+    await db.commit()
 
 
 # 데모 계정 1개 + 영양제/약 각 5개 + 최근 50일치 복용 기록/혈압/혈당 샘플 데이터 생성
-def seed_demo() -> None:
-    db = SessionLocal()
-    try:
-        delete_existing_demo(db)
+async def seed_demo() -> None:
+    async with SessionLocal() as db:
+        await delete_existing_demo(db)
 
         demo_user = User(
             user_id=DEMO_USER_ID,
@@ -156,7 +164,7 @@ def seed_demo() -> None:
             is_demo=True,
         )
         db.add(demo_user)
-        db.flush()
+        await db.flush()
 
         today = date.today()
 
@@ -170,14 +178,14 @@ def seed_demo() -> None:
                 status=EatStatus.ING,
             )
             db.add(item)
-            db.flush()
+            await db.flush()
 
             schedule = SupplementSchedule(
                 supplement_item_seq=item.supplement_item_seq,
                 scheduled_time=sample["scheduled_time"],
             )
             db.add(schedule)
-            db.flush()
+            await db.flush()
 
             for day_offset in range(SAMPLE_DAYS):
                 log_date = today - timedelta(days=day_offset)
@@ -205,14 +213,14 @@ def seed_demo() -> None:
                 is_prescription=medication_sample["is_prescription"],
             )
             db.add(medication_item)
-            db.flush()
+            await db.flush()
 
             medication_schedule = MedicationSchedule(
                 medication_item_seq=medication_item.medication_item_seq,
                 scheduled_time=medication_sample["scheduled_time"],
             )
             db.add(medication_schedule)
-            db.flush()
+            await db.flush()
 
             for day_offset in range(SAMPLE_DAYS):
                 log_date = today - timedelta(days=day_offset)
@@ -253,11 +261,9 @@ def seed_demo() -> None:
                 )
             )
 
-        db.commit()
+        await db.commit()
         print(f"데모 계정 시딩 완료 - user_id: {DEMO_USER_ID}, password: {DEMO_PASSWORD}")
-    finally:
-        db.close()
 
 
 if __name__ == "__main__":
-    seed_demo()
+    asyncio.run(seed_demo())

@@ -4,7 +4,7 @@ import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from passlib.context import CryptContext
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config.settings import settings
 from app.database import get_db
@@ -41,9 +41,9 @@ def decode_access_token(token: str) -> dict[str, str]:
 
 
 # Authorization 헤더의 Bearer 토큰을 검증하고, 토큰 주인 User를 반환
-def get_current_user(
+async def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
-    db: Session = Depends(get_db),
+    db: AsyncSession = Depends(get_db),
 ) -> User:
     try:
         payload = decode_access_token(credentials.credentials)
@@ -53,7 +53,7 @@ def get_current_user(
             detail="유효하지 않은 토큰입니다",
         )
 
-    user = get_user_by_user_seq(db, int(payload["sub"]))
+    user = await get_user_by_user_seq(db, int(payload["sub"]))
 
     if user is None:
         raise HTTPException(

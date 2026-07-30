@@ -75,9 +75,7 @@ def upgrade() -> None:
     op.alter_column(
         "medication_items",
         "timing",
-        existing_type=mysql.ENUM(
-            "EMPTY", "BEFORE", "AFTER", collation="utf8mb4_unicode_ci"
-        ),
+        existing_type=mysql.ENUM("EMPTY", "BEFORE", "AFTER", collation="utf8mb4_unicode_ci"),
         comment="복용 시기",
         existing_nullable=False,
     )
@@ -276,9 +274,7 @@ def downgrade() -> None:
     op.alter_column(
         "medication_items",
         "timing",
-        existing_type=mysql.ENUM(
-            "EMPTY", "BEFORE", "AFTER", collation="utf8mb4_unicode_ci"
-        ),
+        existing_type=mysql.ENUM("EMPTY", "BEFORE", "AFTER", collation="utf8mb4_unicode_ci"),
         comment=None,
         existing_comment="복용 시기",
         existing_nullable=False,

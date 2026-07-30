@@ -3,8 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { Settings as SettingsIcon, LogOut, ChevronRight } from "lucide-react";
 import BottomNav from "../components/BottomNav";
 import ConfirmDialog from "../components/ConfirmDialog";
-import { getMe } from "../api/auth";
-import { getToken, clearToken } from "../utils/auth";
+import { getMe } from "../api/user";
+import { getToken, clearToken } from "../utils/user";
 
 function Settings() {
   const navigate = useNavigate();

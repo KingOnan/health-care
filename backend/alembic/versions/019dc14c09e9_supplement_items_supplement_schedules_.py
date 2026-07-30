@@ -34,54 +34,42 @@ def upgrade() -> None:
     op.alter_column(
         "supplement_items",
         "name",
-        existing_type=mysql.VARCHAR(
-            charset="utf8mb4", collation="utf8mb4_unicode_ci", length=50
-        ),
+        existing_type=mysql.VARCHAR(charset="utf8mb4", collation="utf8mb4_unicode_ci", length=50),
         comment="명칭(이름)",
         existing_nullable=False,
     )
     op.alter_column(
         "supplement_items",
         "product_name",
-        existing_type=mysql.VARCHAR(
-            charset="utf8mb4", collation="utf8mb4_unicode_ci", length=50
-        ),
+        existing_type=mysql.VARCHAR(charset="utf8mb4", collation="utf8mb4_unicode_ci", length=50),
         comment="제품명",
         existing_nullable=True,
     )
     op.alter_column(
         "supplement_items",
         "company_name",
-        existing_type=mysql.VARCHAR(
-            charset="utf8mb4", collation="utf8mb4_unicode_ci", length=50
-        ),
+        existing_type=mysql.VARCHAR(charset="utf8mb4", collation="utf8mb4_unicode_ci", length=50),
         comment="회사명",
         existing_nullable=True,
     )
     op.alter_column(
         "supplement_items",
         "nutrition_info",
-        existing_type=mysql.VARCHAR(
-            charset="utf8mb4", collation="utf8mb4_unicode_ci", length=500
-        ),
+        existing_type=mysql.VARCHAR(charset="utf8mb4", collation="utf8mb4_unicode_ci", length=500),
         comment="함량/영양정보",
         existing_nullable=True,
     )
     op.alter_column(
         "supplement_items",
         "description",
-        existing_type=mysql.VARCHAR(
-            charset="utf8mb4", collation="utf8mb4_unicode_ci", length=500
-        ),
+        existing_type=mysql.VARCHAR(charset="utf8mb4", collation="utf8mb4_unicode_ci", length=500),
         comment="설명",
         existing_nullable=True,
     )
     op.alter_column(
         "supplement_items",
         "photo_path",
-        existing_type=mysql.VARCHAR(
-            charset="utf8mb4", collation="utf8mb4_unicode_ci", length=255
-        ),
+        existing_type=mysql.VARCHAR(charset="utf8mb4", collation="utf8mb4_unicode_ci", length=255),
         comment="사진 경로",
         existing_nullable=True,
     )
@@ -101,9 +89,7 @@ def upgrade() -> None:
     op.alter_column(
         "supplement_items",
         "status",
-        existing_type=mysql.ENUM(
-            "ING", "PAUSE", "END", charset="utf8mb4", collation="utf8mb4_unicode_ci"
-        ),
+        existing_type=mysql.ENUM("ING", "PAUSE", "END", charset="utf8mb4", collation="utf8mb4_unicode_ci"),
         comment="복용 상태",
         existing_nullable=False,
     )
@@ -133,9 +119,7 @@ def downgrade() -> None:
     op.alter_column(
         "supplement_items",
         "status",
-        existing_type=mysql.ENUM(
-            "ING", "PAUSE", "END", charset="utf8mb4", collation="utf8mb4_unicode_ci"
-        ),
+        existing_type=mysql.ENUM("ING", "PAUSE", "END", charset="utf8mb4", collation="utf8mb4_unicode_ci"),
         comment=None,
         existing_comment="복용 상태",
         existing_nullable=False,
@@ -157,9 +141,7 @@ def downgrade() -> None:
     op.alter_column(
         "supplement_items",
         "photo_path",
-        existing_type=mysql.VARCHAR(
-            charset="utf8mb4", collation="utf8mb4_unicode_ci", length=255
-        ),
+        existing_type=mysql.VARCHAR(charset="utf8mb4", collation="utf8mb4_unicode_ci", length=255),
         comment=None,
         existing_comment="사진 경로",
         existing_nullable=True,
@@ -167,9 +149,7 @@ def downgrade() -> None:
     op.alter_column(
         "supplement_items",
         "description",
-        existing_type=mysql.VARCHAR(
-            charset="utf8mb4", collation="utf8mb4_unicode_ci", length=500
-        ),
+        existing_type=mysql.VARCHAR(charset="utf8mb4", collation="utf8mb4_unicode_ci", length=500),
         comment=None,
         existing_comment="설명",
         existing_nullable=True,
@@ -177,9 +157,7 @@ def downgrade() -> None:
     op.alter_column(
         "supplement_items",
         "nutrition_info",
-        existing_type=mysql.VARCHAR(
-            charset="utf8mb4", collation="utf8mb4_unicode_ci", length=500
-        ),
+        existing_type=mysql.VARCHAR(charset="utf8mb4", collation="utf8mb4_unicode_ci", length=500),
         comment=None,
         existing_comment="함량/영양정보",
         existing_nullable=True,
@@ -187,9 +165,7 @@ def downgrade() -> None:
     op.alter_column(
         "supplement_items",
         "company_name",
-        existing_type=mysql.VARCHAR(
-            charset="utf8mb4", collation="utf8mb4_unicode_ci", length=50
-        ),
+        existing_type=mysql.VARCHAR(charset="utf8mb4", collation="utf8mb4_unicode_ci", length=50),
         comment=None,
         existing_comment="회사명",
         existing_nullable=True,
@@ -197,9 +173,7 @@ def downgrade() -> None:
     op.alter_column(
         "supplement_items",
         "product_name",
-        existing_type=mysql.VARCHAR(
-            charset="utf8mb4", collation="utf8mb4_unicode_ci", length=50
-        ),
+        existing_type=mysql.VARCHAR(charset="utf8mb4", collation="utf8mb4_unicode_ci", length=50),
         comment=None,
         existing_comment="제품명",
         existing_nullable=True,
@@ -207,9 +181,7 @@ def downgrade() -> None:
     op.alter_column(
         "supplement_items",
         "name",
-        existing_type=mysql.VARCHAR(
-            charset="utf8mb4", collation="utf8mb4_unicode_ci", length=50
-        ),
+        existing_type=mysql.VARCHAR(charset="utf8mb4", collation="utf8mb4_unicode_ci", length=50),
         comment=None,
         existing_comment="명칭(이름)",
         existing_nullable=False,

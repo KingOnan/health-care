@@ -83,6 +83,20 @@
 - 도메인 용어는 한국어 기획 용어를 영어로 직역하지 말고 자연스러운 영어로 통일한다
   (예: 복용 항목 → `medication_item`, 복용 기록 → `intake_log`, 복용률 → `adherence_rate`).
   용어가 애매하면 새로 짓지 말고 기존 코드에서 이미 쓰인 용어를 따른다.
+- **CRUD 동사는 레파지토리/서비스/라우터 세 계층에서 전부 동일하게 사용한다** (계층마다 다른 동사를
+  쓰지 않는다):
+
+  | 동작 | 레파지토리 | 서비스 | 라우터 |
+  |---|---|---|---|
+  | 조회(단건) | `get_x` | `get_x` | `get_x` |
+  | 조회(목록) | `get_x_list` | `get_x_list` | `get_x_list` |
+  | 생성 | `create_x` | `create_x` | `create_x` |
+  | 수정 | `update_x` | `update_x` | `update_x` |
+  | 삭제 | `delete_x` | `delete_x` | `delete_x` |
+
+  같은 이름을 계층마다 그대로 쓰면 import 시 이름이 겹치므로, 상위 계층에서 하위 계층 모듈을 가져올 때
+  `from app.repositories import supplement as supplement_repo`처럼 **모듈 별칭으로 구분**한다
+  (라우터가 서비스를 가져올 때 이미 쓰던 `from app.services import user as user_service` 방식과 동일).
 
 ### 4.3 프로젝트 구조
 
@@ -96,8 +110,8 @@
 **FastAPI 내부 구조**
 - 라우터(`api/routers`) — 서비스 로직(`services`) — 데이터 접근(`repositories` 또는 `crud`) — 스키마
   (`schemas`, Pydantic) — 모델(`models`, ORM)로 계층을 분리한다. 라우터에 비즈니스 로직을 직접 두지 않는다.
-- 도메인별(영양제/약/혈압/혈당/AI)로 모듈을 나눈다. 영양제·약은 구조가 같으므로 공통 로직을 공유 모듈로
-  재사용하고 데이터만 분리한다.
+- 도메인별(영양제/약/혈압/혈당/AI)로 모듈을 나눈다. 영양제·약은 구조가 비슷하더라도 공유 모듈로 묶지 않고
+  각각 독립적으로 구현한다.
 - 설정값(정상/주의 기준, API 키, 타임존 등)은 `pydantic-settings` 기반 config 모듈로 중앙화한다.
 
 ### 4.4 비동기/에러 처리

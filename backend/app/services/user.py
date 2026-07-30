@@ -1,13 +1,13 @@
 from fastapi import HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.repositories.user import get_user_by_user_id
 from app.security import create_access_token, verify_password
 
 
 # 아이디+비밀번호 검증 후 JWT 발급, 실패 시 401 예외 발생
-def login(db: Session, user_id: str, user_password: str) -> str:
-    user = get_user_by_user_id(db, user_id)
+async def login(db: AsyncSession, user_id: str, user_password: str) -> str:
+    user = await get_user_by_user_id(db, user_id)
 
     if user is None or not verify_password(user_password, user.user_password):
         raise HTTPException(

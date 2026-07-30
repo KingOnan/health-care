@@ -5,13 +5,13 @@ import Button from "../components/Button";
 import SecondaryButton from "../components/SecondaryButton";
 import InputField from "../components/InputField";
 import Toast from "../components/Toast";
-import { login } from "../api/auth";
-import { getToken, setToken } from "../utils/auth";
+import { login } from "../api/user";
+import { getToken, setToken } from "../utils/user";
 
 function Login() {
   const navigate = useNavigate();
-  const [userId, setUserId] = useState("");
-  const [password, setPassword] = useState("");
+  const [userId, setUserId] = useState(import.meta.env.DEV ? "test" : "");
+  const [password, setPassword] = useState(import.meta.env.DEV ? "test123" : "");
   const [remember, setRemember] = useState(true);
   const [toast, setToast] = useState({ show: false, message: "", variant: "success" });
 
