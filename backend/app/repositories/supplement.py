@@ -1,6 +1,8 @@
 from datetime import time
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import load_only, selectinload
 
 from app.models.enums import EatStatus
 from app.models.supplement_item import SupplementItem
@@ -46,3 +48,27 @@ async def create_supplement_schedule(
         db.add(schedule)
 
     await db.flush()
+
+
+# 영양제 항목 목록 조회 (스케줄 포함)
+async def get_supplement_item_list(db: AsyncSession, user_seq: int) -> list[SupplementItem]:
+    result = await db.scalars(
+        select(SupplementItem)
+        .where(SupplementItem.user_seq == user_seq)
+        .options(
+            # 엔티티 자체는 select하되, 실제로 DB에서 가져올 컬럼은 이것만으로 제한
+            load_only(
+                SupplementItem.name,
+                SupplementItem.supplement_item_seq,
+                SupplementItem.status,
+            ),
+            # 스케줄도 IN 쿼리로 한 번에 미리 로딩(N+1 방지), 그중 시간 컬럼만
+            selectinload(
+                SupplementItem.schedules,
+            ).options(
+                load_only(SupplementSchedule.scheduled_time),
+            ),
+        )
+    )
+
+    return list(result.all())

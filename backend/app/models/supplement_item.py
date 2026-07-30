@@ -1,10 +1,11 @@
 from datetime import datetime
 
 from sqlalchemy import DateTime, Enum, ForeignKey, String, func
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
 from app.models.enums import EatStatus, EatTiming
+from app.models.supplement_schedule import SupplementSchedule
 
 
 # 영양제
@@ -22,3 +23,6 @@ class SupplementItem(Base):
     timing: Mapped[EatTiming] = mapped_column(Enum(EatTiming), comment="복용 시기")
     status: Mapped[EatStatus] = mapped_column(Enum(EatStatus), comment="복용 상태")
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), comment="만들어진 날짜")
+
+    # DB 컬럼 아님, 연관된 스케줄들을 파이썬 객체로 접근하기 위한 선언
+    schedules: Mapped[list[SupplementSchedule]] = relationship()

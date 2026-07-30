@@ -1,6 +1,6 @@
 from datetime import datetime, time
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel
 
 from app.models.enums import EatStatus, EatTiming
 
@@ -23,8 +23,6 @@ class SupplementItemUpdate(SupplementItemCreate):
 
 # 영양제 항목 응답
 class SupplementItemResponse(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
     supplement_item_seq: int
     name: str
     product_name: str | None
@@ -36,3 +34,11 @@ class SupplementItemResponse(BaseModel):
     status: EatStatus
     scheduled_times: list[time]
     created_at: datetime
+
+
+# 영양제 항목 목록 조회 응답 (목록 화면에 필요한 필드만)
+class SupplementItemListResponse(BaseModel):
+    supplement_item_seq: int
+    name: str
+    status: EatStatus
+    scheduled_times: list[time]

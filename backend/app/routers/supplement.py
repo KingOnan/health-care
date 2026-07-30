@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.models.user import User
-from app.schemas.supplement import SupplementItemCreate
+from app.schemas.supplement import SupplementItemCreate, SupplementItemListResponse
 from app.security import get_current_user
 from app.services import supplement as supplement_service
 
@@ -30,3 +30,12 @@ async def create_supplement(
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=e.errors())
 
     return await supplement_service.create_supplement(db, current_user.user_seq, parsedSupplementItemCreate, photo)
+
+
+# 영양제 항목 목록 조회
+@router.get("/list", response_model=list[SupplementItemListResponse])
+async def get_supplement_item_list(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> list[SupplementItemListResponse]:
+    return await supplement_service.get_supplement_item_list(db, current_user.user_seq)

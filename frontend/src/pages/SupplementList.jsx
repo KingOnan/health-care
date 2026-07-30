@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   PillBottle,
   ChevronRight,
@@ -9,24 +9,38 @@ import {
   Clock,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { INITIAL_ITEMS } from "../data/supplementItems";
+import { getSupplementItemList } from "../api/supplement";
+import { getToken } from "../utils/user";
 import Toast from "../components/Toast";
 import ConfirmDialog from "../components/ConfirmDialog";
 import BottomNav from "../components/BottomNav";
 import useToastNavigate from "../hooks/useToastNavigate";
 import { eulReul } from "../utils/korean";
 
+// 백엔드 응답(SupplementItemResponse)을 화면이 쓰는 모양으로 변환
+const toViewItem = (item) => ({
+  id: item.supplement_item_seq,
+  name: item.name,
+  times: item.scheduled_times.map((t) => t.slice(0, 5)),
+  paused: item.status === "일시중지",
+});
+
 function SupplementList() {
   const navigate = useNavigate();
+  const [items, setItems] = useState([]);
   const [pendingDeleteId, setPendingDeleteId] = useState(null);
   const [pendingEndId, setPendingEndId] = useState(null);
-  const pendingDeleteItem = INITIAL_ITEMS.find(
-    (item) => item.id === pendingDeleteId,
-  );
-  const pendingEndItem = INITIAL_ITEMS.find((item) => item.id === pendingEndId);
+  const pendingDeleteItem = items.find((item) => item.id === pendingDeleteId);
+  const pendingEndItem = items.find((item) => item.id === pendingEndId);
   const { showToast, message, trigger: handleAction } = useToastNavigate({
     message: "삭제했어요",
   });
+
+  useEffect(() => {
+    getSupplementItemList(getToken())
+      .then((data) => setItems(data.map(toViewItem)))
+      .catch(() => {});
+  }, []);
 
   return (
     <div className="theme-supplement flex min-h-svh flex-col bg-page-bg">
@@ -38,7 +52,7 @@ function SupplementList() {
       </header>
 
       <div className="flex flex-col gap-5 p-6 pt-[100px] pb-26">
-        {INITIAL_ITEMS.map((item) => (
+        {items.map((item) => (
           <div
             key={item.id}
             className={`flex flex-col overflow-hidden rounded-2xl bg-surface shadow-[0_2px_10px_rgba(0,0,0,0.14)] ${

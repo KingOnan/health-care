@@ -20,3 +20,16 @@ export async function createSupplement(data, photoFile, token) {
 
   return response.json();
 }
+
+// 영양제 항목 목록 조회
+export async function getSupplementItemList(token) {
+  const response = await fetch(`${API_BASE_URL}/supplement/list`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    throw new Error("영양제 목록 조회 실패");
+  }
+
+  return response.json();
+}
