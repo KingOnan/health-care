@@ -26,5 +26,8 @@ class Settings(BaseSettings):
     # CORS 허용 origin (쉼표로 여러 개 구분 가능)
     cors_allowed_origins: str
 
+    # 업로드 파일(사진 등) 저장 경로
+    upload_dir: str
+
 
 settings = Settings()  # type: ignore[call-arg]  # 값은 .env에서 자동으로 채워짐

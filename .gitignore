@@ -6,6 +6,7 @@ __pycache__/
 .mypy_cache/
 .ruff_cache/
 backend/.env
+backend/uploads/
 
 # --- frontend (추후 추가 예정) ---
 # node_modules/

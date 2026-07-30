@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config.settings import settings
-from app.routers import auth
+from app.routers import supplement, user
 
 app = FastAPI()
 
@@ -14,9 +14,5 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(auth.router)
-
-
-@app.get("/health")
-async def health_check() -> dict[str, str]:
-    return {"status": "ok"}
+app.include_router(user.router)
+app.include_router(supplement.router)
