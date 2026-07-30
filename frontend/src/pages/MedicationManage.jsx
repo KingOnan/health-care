@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Pill, Plus, Save, Star, X } from "lucide-react";
 import { useParams } from "react-router-dom";
 import InputField from "../components/InputField";
+import Textarea from "../components/Textarea";
 import Button from "../components/Button";
 import PhotoPicker from "../components/PhotoPicker";
 import SegmentedToggle from "../components/SegmentedToggle";
@@ -244,16 +245,18 @@ function MedicationManage() {
                 required={false}
               />
             </div>
+            <div className="px-6 py-6">
+              <Textarea
+                label="함량/영양정보"
+                placeholder="주요 성분, 1회 복용량 등"
+                required={false}
+              />
+            </div>
           </>
         )}
 
         <div className="px-6 pt-6">
-          <InputField
-            label="설명"
-            placeholder="효능, 주의사항 등"
-            type="text"
-            required={false}
-          />
+          <Textarea label="설명" placeholder="효능, 주의사항 등" required={false} />
         </div>
       </div>
 

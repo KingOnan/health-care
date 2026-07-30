@@ -2,7 +2,12 @@ import { Pill, PillBottle, HeartPulse, Droplet, Settings } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const NAV_ITEMS = [
-  { key: "supplement", label: "영양제", Icon: PillBottle, route: "/supplement" },
+  {
+    key: "supplement",
+    label: "영양제",
+    Icon: PillBottle,
+    route: "/supplement",
+  },
   { key: "medication", label: "약", Icon: Pill, route: "/medication" },
   { key: "bp", label: "혈압", Icon: HeartPulse, route: "/blood-pressure" },
   { key: "glucose", label: "혈당", Icon: Droplet, route: "/blood-sugar" },
@@ -13,7 +18,7 @@ function BottomNav({ active = "bp" }) {
   const navigate = useNavigate();
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 mx-auto flex w-full max-w-[480px] divide-x-[1.5px] divide-gray-200 bg-surface shadow-[0_-2px_10px_rgba(0,0,0,0.2)]">
+    <nav className="fixed inset-x-0 bottom-0 mx-auto flex w-full max-w-[480px] divide-x-[1.8px] divide-gray-200 bg-surface shadow-[0_-3px_6px_rgba(0,0,0,0.2)]">
       {NAV_ITEMS.map(({ key, label, Icon, route }) => {
         const isActive = key === active;
         return (
@@ -25,7 +30,7 @@ function BottomNav({ active = "bp" }) {
             }`}
           >
             {isActive && (
-              <span className="absolute top-0 left-1/2 h-1 w-16 -translate-x-1/2 rounded-b-full bg-primary" />
+              <span className="absolute top-0 left-1/2 h-1.5 w-14 -translate-x-1/2 rounded-b-full bg-primary" />
             )}
             <Icon size={18} strokeWidth={isActive ? 2.5 : 2} />
             <span className="text-body font-semibold">{label}</span>

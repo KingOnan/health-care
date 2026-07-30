@@ -1,13 +1,15 @@
 import { useState } from "react";
 import { PillBottle, Plus, Save, Star, X } from "lucide-react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import InputField from "../components/InputField";
+import Textarea from "../components/Textarea";
 import Button from "../components/Button";
 import PhotoPicker from "../components/PhotoPicker";
 import SegmentedToggle from "../components/SegmentedToggle";
 import Toast from "../components/Toast";
 import BottomNav from "../components/BottomNav";
-import useToastNavigate from "../hooks/useToastNavigate";
+import { createSupplement } from "../api/supplement";
+import { getToken } from "../utils/user";
 import { INITIAL_ITEMS } from "../data/supplementItems";
 
 const TIMING_OPTIONS = [
@@ -31,6 +33,10 @@ function SupplementManage() {
   const [name, setName] = useState(existingItem?.name ?? "");
   const [timing, setTiming] = useState(existingItem?.timing ?? "식후");
   const [paused, setPaused] = useState(existingItem?.paused ?? false);
+  const [productName, setProductName] = useState("");
+  const [companyName, setCompanyName] = useState("");
+  const [nutritionInfo, setNutritionInfo] = useState("");
+  const [description, setDescription] = useState("");
   const [timeEntries, setTimeEntries] = useState(
     existingItem?.times?.length
       ? existingItem.times.map((t) => {
@@ -57,21 +63,63 @@ function SupplementManage() {
   const removeTimeEntry = (index) =>
     setTimeEntries((prev) => prev.filter((_, i) => i !== index));
 
+  const [photoFile, setPhotoFile] = useState(null);
   const [photoUrl, setPhotoUrl] = useState(null);
-  const handleSelectPhoto = (file) => setPhotoUrl(URL.createObjectURL(file));
+  const handleSelectPhoto = (file) => {
+    setPhotoFile(file);
+    setPhotoUrl(URL.createObjectURL(file));
+  };
   const handleRemovePhoto = () => {
     if (photoUrl) URL.revokeObjectURL(photoUrl);
+    setPhotoFile(null);
     setPhotoUrl(null);
   };
 
-  const {
-    showToast,
-    message,
-    trigger: handleSave,
-  } = useToastNavigate({
-    message: isEditMode ? "수정했어요" : "저장했어요",
-    to: "/supplement/list",
-  });
+  const navigate = useNavigate();
+  const [toast, setToast] = useState({ show: false, message: "", variant: "success" });
+
+  // 등록 시각 입력(오전/오후 + 시 + 분)을 백엔드가 받는 "HH:MM:SS" 문자열로 변환
+  const buildScheduledTimes = () =>
+    timeEntries.map((entry) => {
+      let hour = Number(entry.hour) % 12;
+      if (entry.period === "오후") hour += 12;
+      const minute = Number(entry.minute) || 0;
+      return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}:00`;
+    });
+
+  const handleSaveSuccess = (message) => {
+    setToast({ show: true, message, variant: "success" });
+    setTimeout(() => navigate("/supplement/list"), 1000);
+  };
+
+  const handleSaveError = () => {
+    setToast({ show: true, message: "등록에 실패했어요", variant: "error" });
+    setTimeout(() => setToast((prev) => ({ ...prev, show: false })), 1500);
+  };
+
+  // 수정 API(3-3)는 아직 없어서 수정 모드는 기존처럼 mock으로 동작
+  const handleSave = async () => {
+    if (isEditMode) {
+      handleSaveSuccess("수정했어요");
+      return;
+    }
+
+    try {
+      const data = {
+        name,
+        timing,
+        product_name: productName || null,
+        company_name: companyName || null,
+        nutrition_info: nutritionInfo || null,
+        description: description || null,
+        scheduled_times: buildScheduledTimes(),
+      };
+      await createSupplement(data, photoFile, getToken());
+      handleSaveSuccess("저장했어요");
+    } catch {
+      handleSaveError();
+    }
+  };
 
   return (
     <div className="theme-supplement flex min-h-svh flex-col bg-page-bg">
@@ -206,6 +254,8 @@ function SupplementManage() {
             label="제품명"
             placeholder="프로메가 오메가3 1200mg"
             type="text"
+            value={productName}
+            onChange={(e) => setProductName(e.target.value)}
             required={false}
           />
         </div>
@@ -215,21 +265,34 @@ function SupplementManage() {
             label="회사명"
             placeholder="종근당건강"
             type="text"
+            value={companyName}
+            onChange={(e) => setCompanyName(e.target.value)}
+            required={false}
+          />
+        </div>
+
+        <div className="px-6 py-6">
+          <Textarea
+            label="함량/영양정보"
+            placeholder="주요 성분, 1회 섭취량 등"
+            value={nutritionInfo}
+            onChange={(e) => setNutritionInfo(e.target.value)}
             required={false}
           />
         </div>
 
         <div className="px-6 pt-6">
-          <InputField
+          <Textarea
             label="설명"
             placeholder="효능, 주의사항 등"
-            type="text"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
             required={false}
           />
         </div>
       </div>
 
-      <Toast show={showToast} message={message} />
+      <Toast show={toast.show} message={toast.message} variant={toast.variant} />
 
       <BottomNav active="supplement" />
     </div>

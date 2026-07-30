@@ -6,6 +6,7 @@ import {
   ClipboardList,
   Package,
   Building2,
+  FlaskConical,
   Clock,
   Utensils,
   CheckCircle2,
@@ -21,6 +22,7 @@ const ROW_ICONS = {
   구분: ClipboardList,
   제품명: Package,
   회사명: Building2,
+  "함량/영양정보": FlaskConical,
   "예정 시각": Clock,
   "복용 방법": Utensils,
   "복용 상태": CheckCircle2,
@@ -37,8 +39,16 @@ function MedicationDetail() {
   const rows = [
     ["명칭", item.name],
     ["구분", item.isPrescription ? "병원 처방약" : "일반의약품"],
-    ["제품명", item.productName ?? "노바스크정 5mg"],
-    ["회사명", item.companyName ?? "한국화이자제약"],
+    ...(item.isPrescription
+      ? []
+      : [
+          ["제품명", item.productName ?? "노바스크정 5mg"],
+          ["회사명", item.companyName ?? "한국화이자제약"],
+          [
+            "함량/영양정보",
+            item.nutritionInfo ?? "암로디핀베실산염 5mg",
+          ],
+        ]),
     ["예정 시각", item.times?.join(", ")],
     ["복용 방법", item.timing ?? "식후"],
     ["복용 상태", item.paused ? "일시중지" : "복용 중"],
@@ -102,9 +112,10 @@ function MedicationDetail() {
                 {Icon && <Icon size={20} strokeWidth={3} className="text-primary" />}
                 {label}
               </span>
-              <div className="ml-1 flex items-stretch gap-3">
-                <div className="my-0.5 w-1.5 shrink-0 rounded-full bg-primary" />
-                <span className="text-lg font-medium text-text">{value}</span>
+              <div className="rounded-xl border-t-[5px] border-r border-b border-l border-t-border border-r-gray-300 border-b-gray-300 border-l-gray-300 bg-surface px-4 py-3">
+                <span className="text-lg font-medium whitespace-pre-wrap text-text">
+                  {value}
+                </span>
               </div>
             </div>
           );

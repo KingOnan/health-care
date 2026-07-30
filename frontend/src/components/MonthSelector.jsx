@@ -2,7 +2,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 
 function MonthSelector({ year, month, onPrev, onNext, disableNext = false }) {
   return (
-    <div className="flex items-center justify-between rounded-2xl border-[2.5px] border-primary bg-surface p-2.5">
+    <div className="flex items-center justify-between rounded-2xl border-2 border-primary bg-surface p-2.5">
       <button
         onClick={onPrev}
         className="ml-2 flex h-10 w-10 items-center justify-center rounded-full border-2 border-primary text-primary transition active:scale-95 active:bg-page-bg"

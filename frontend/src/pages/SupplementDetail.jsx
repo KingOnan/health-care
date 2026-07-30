@@ -5,6 +5,7 @@ import {
   Tag,
   Package,
   Building2,
+  FlaskConical,
   Clock,
   Utensils,
   CheckCircle2,
@@ -19,6 +20,7 @@ const ROW_ICONS = {
   명칭: Tag,
   제품명: Package,
   회사명: Building2,
+  "함량/영양정보": FlaskConical,
   "예정 시각": Clock,
   "복용 방법": Utensils,
   "복용 상태": CheckCircle2,
@@ -36,6 +38,10 @@ function SupplementDetail() {
     ["명칭", item.name],
     ["제품명", item.productName ?? "프로메가 알티지오메가3 1200mg"],
     ["회사명", item.companyName ?? "종근당건강"],
+    [
+      "함량/영양정보",
+      item.nutritionInfo ?? "오메가3 지방산(EPA+DHA) 1,200mg\n비타민E 4mg",
+    ],
     ["예정 시각", item.times?.join(", ")],
     ["복용 방법", item.timing ?? "식후"],
     ["복용 상태", item.paused ? "일시중지" : "복용 중"],
@@ -98,9 +104,10 @@ function SupplementDetail() {
                 {Icon && <Icon size={20} strokeWidth={3} className="text-primary" />}
                 {label}
               </span>
-              <div className="ml-1 flex items-stretch gap-3">
-                <div className="my-0.5 w-1.5 shrink-0 rounded-full bg-primary" />
-                <span className="text-lg font-medium text-text">{value}</span>
+              <div className="rounded-xl border-t-[5px] border-r border-b border-l border-t-border border-r-gray-300 border-b-gray-300 border-l-gray-300 bg-surface px-4 py-3">
+                <span className="text-lg font-medium whitespace-pre-wrap text-text">
+                  {value}
+                </span>
               </div>
             </div>
           );
