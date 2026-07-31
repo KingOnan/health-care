@@ -1,12 +1,13 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
+from fastapi.responses import FileResponse
 from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.models.user import User
-from app.schemas.supplement import SupplementItemCreate, SupplementItemListResponse
+from app.schemas.supplement import SupplementItemCreate, SupplementItemListResponse, SupplementItemResponse
 from app.security import get_current_user
 from app.services import supplement as supplement_service
 
@@ -39,3 +40,33 @@ async def get_supplement_item_list(
     current_user: User = Depends(get_current_user),
 ) -> list[SupplementItemListResponse]:
     return await supplement_service.get_supplement_item_list(db, current_user.user_seq)
+
+
+# 영양제 항목 상세 조회
+@router.get("/{supplement_item_seq}", response_model=SupplementItemResponse)
+async def get_supplement_item(
+    supplement_item_seq: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> SupplementItemResponse:
+    result = await supplement_service.get_supplement_item(db, current_user.user_seq, supplement_item_seq)
+
+    if result is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="영양제 항목을 찾을 수 없습니다.")
+
+    return result
+
+
+# 영양제 항목 사진 조회 (소유자 확인 후 파일로 응답)
+@router.get("/{supplement_item_seq}/photo")
+async def get_supplement_item_photo(
+    supplement_item_seq: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> FileResponse:
+    photo_path = await supplement_service.get_supplement_item_photo_path(db, current_user.user_seq, supplement_item_seq)
+
+    if photo_path is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="사진을 찾을 수 없습니다.")
+
+    return FileResponse(photo_path)

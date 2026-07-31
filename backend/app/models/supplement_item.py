@@ -24,5 +24,5 @@ class SupplementItem(Base):
     status: Mapped[EatStatus] = mapped_column(Enum(EatStatus), comment="복용 상태")
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), comment="만들어진 날짜")
 
-    # DB 컬럼 아님, 연관된 스케줄들을 파이썬 객체로 접근하기 위한 선언
-    schedules: Mapped[list[SupplementSchedule]] = relationship()
+    # DB 컬럼 아님, 연관된 스케줄들을 파이썬 객체로 접근하기 위한 선언 (항상 복용 시각 오름차순으로 정렬)
+    schedules: Mapped[list[SupplementSchedule]] = relationship(order_by=SupplementSchedule.scheduled_time)

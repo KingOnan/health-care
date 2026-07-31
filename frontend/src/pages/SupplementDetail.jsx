@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import {
   PillBottle,
   Pencil,
@@ -14,7 +15,27 @@ import {
 import { useNavigate, useParams } from "react-router-dom";
 import BottomNav from "../components/BottomNav";
 import Button from "../components/Button";
-import { INITIAL_ITEMS } from "../data/supplementItems";
+import { getSupplementItem, getSupplementItemPhotoUrl } from "../api/supplement";
+import { getToken } from "../utils/user";
+
+// "09:00:00" -> 오전은 주황, 오후는 파랑으로 강조하고, 시간표처럼 행 사이에 구분선을 넣어 보여줌
+const formatScheduledTime = (time, key, isFirst, isLast) => {
+  const hour = Number(time.slice(0, 2));
+  const isAm = hour < 12;
+  return (
+    <span
+      key={key}
+      className={`grid grid-cols-[3.5rem_auto] ${isFirst ? "pt-0" : "pt-2"} ${
+        isLast ? "pb-0" : "pb-2 border-b border-gray-200"
+      }`}
+    >
+      <span className={isAm ? "text-orange-500" : "text-blue-500"}>
+        {isAm ? "오전" : "오후"}
+      </span>
+      <span>{time.slice(0, 5)}</span>
+    </span>
+  );
+};
 
 const ROW_ICONS = {
   명칭: Tag,
@@ -30,26 +51,48 @@ const ROW_ICONS = {
 function SupplementDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const item = INITIAL_ITEMS.find((i) => i.id === Number(id));
+  const [item, setItem] = useState(null);
+  const [photoUrl, setPhotoUrl] = useState(null);
+
+  useEffect(() => {
+    getSupplementItem(id, getToken())
+      .then(setItem)
+      .catch(() => {});
+  }, [id]);
+
+  useEffect(() => {
+    if (!item?.photo_path) return;
+
+    let objectUrl = null;
+    getSupplementItemPhotoUrl(id, getToken())
+      .then((url) => {
+        objectUrl = url;
+        setPhotoUrl(url);
+      })
+      .catch(() => {});
+
+    // Blob URL은 브라우저 메모리에 남아있어서 화면을 벗어나면 직접 해제해줘야 함
+    return () => {
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [id, item?.photo_path]);
 
   if (!item) return null;
 
   const rows = [
     ["명칭", item.name],
-    ["제품명", item.productName ?? "프로메가 알티지오메가3 1200mg"],
-    ["회사명", item.companyName ?? "종근당건강"],
+    ["제품명", item.product_name],
+    ["회사명", item.company_name],
+    ["함량/영양정보", item.nutrition_info],
     [
-      "함량/영양정보",
-      item.nutritionInfo ?? "오메가3 지방산(EPA+DHA) 1,200mg\n비타민E 4mg",
+      "예정 시각",
+      item.scheduled_times.map((t, i, arr) =>
+        formatScheduledTime(t, i, i === 0, i === arr.length - 1),
+      ),
     ],
-    ["예정 시각", item.times?.join(", ")],
-    ["복용 방법", item.timing ?? "식후"],
-    ["복용 상태", item.paused ? "일시중지" : "복용 중"],
-    [
-      "설명",
-      item.description ??
-        "혈행 개선과 항산화에 도움을 줄 수 있는 오메가3 지방산 보충제예요.",
-    ],
+    ["복용 방법", item.timing],
+    ["복용 상태", item.status],
+    ["설명", item.description],
   ];
 
   return (
@@ -69,7 +112,7 @@ function SupplementDetail() {
           bg="bg-surface"
           text="text-primary"
           className="border-2 border-primary"
-          onClick={() => navigate(`/supplement/manage/${item.id}`)}
+          onClick={() => navigate(`/supplement/manage/${item.supplement_item_seq}`)}
         >
           <Pencil size={18} />
           수정하기
@@ -78,9 +121,9 @@ function SupplementDetail() {
 
       <div className="flex flex-col divide-y-[6px] divide-white pb-26 pt-[100px]">
         <div className="px-6 pb-6">
-          {item.photoUrl ? (
+          {photoUrl ? (
             <img
-              src={item.photoUrl}
+              src={photoUrl}
               alt=""
               className="h-48 w-full rounded-xl object-cover"
             />
@@ -104,7 +147,7 @@ function SupplementDetail() {
                 {Icon && <Icon size={20} strokeWidth={3} className="text-primary" />}
                 {label}
               </span>
-              <div className="rounded-xl border-t-[5px] border-r border-b border-l border-t-border border-r-gray-300 border-b-gray-300 border-l-gray-300 bg-surface px-4 py-3">
+              <div className="rounded-xl border-t border-r border-b border-l-[6px] border-l-border border-t-gray-300 border-r-gray-300 border-b-gray-300 bg-surface px-4 py-3">
                 <span className="text-lg font-medium whitespace-pre-wrap text-text">
                   {value}
                 </span>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { PillBottle, Plus, Save, Star, X } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import InputField from "../components/InputField";
@@ -8,9 +8,8 @@ import PhotoPicker from "../components/PhotoPicker";
 import SegmentedToggle from "../components/SegmentedToggle";
 import Toast from "../components/Toast";
 import BottomNav from "../components/BottomNav";
-import { createSupplement } from "../api/supplement";
+import { createSupplement, getSupplementItem, getSupplementItemPhotoUrl } from "../api/supplement";
 import { getToken } from "../utils/user";
-import { INITIAL_ITEMS } from "../data/supplementItems";
 
 const TIMING_OPTIONS = [
   { label: "공복", value: "공복" },
@@ -26,25 +25,17 @@ const STATUS_OPTIONS = [
 function SupplementManage() {
   const { id } = useParams();
   const isEditMode = id !== undefined;
-  const existingItem = isEditMode
-    ? INITIAL_ITEMS.find((item) => item.id === Number(id))
-    : null;
 
-  const [name, setName] = useState(existingItem?.name ?? "");
-  const [timing, setTiming] = useState(existingItem?.timing ?? "식후");
-  const [paused, setPaused] = useState(existingItem?.paused ?? false);
+  const [name, setName] = useState("");
+  const [timing, setTiming] = useState("식후");
+  const [paused, setPaused] = useState(false);
   const [productName, setProductName] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [nutritionInfo, setNutritionInfo] = useState("");
   const [description, setDescription] = useState("");
-  const [timeEntries, setTimeEntries] = useState(
-    existingItem?.times?.length
-      ? existingItem.times.map((t) => {
-          const [hour, minute] = t.split(":");
-          return { period: Number(hour) >= 12 ? "오후" : "오전", hour, minute };
-        })
-      : [{ period: "오전", hour: "", minute: "" }],
-  );
+  const [timeEntries, setTimeEntries] = useState([
+    { period: "오전", hour: "", minute: "" },
+  ]);
 
   const updateTimeEntry = (index, field, value) => {
     setTimeEntries((prev) =>
@@ -74,6 +65,42 @@ function SupplementManage() {
     setPhotoFile(null);
     setPhotoUrl(null);
   };
+
+  // 수정 모드면 상세 조회 API로 기존 값을 불러와 폼에 채워넣음
+  useEffect(() => {
+    if (!isEditMode) return;
+
+    let objectUrl = null;
+
+    getSupplementItem(id, getToken())
+      .then((item) => {
+        setName(item.name);
+        setTiming(item.timing);
+        setPaused(item.status === "일시중지");
+        setProductName(item.product_name ?? "");
+        setCompanyName(item.company_name ?? "");
+        setNutritionInfo(item.nutrition_info ?? "");
+        setDescription(item.description ?? "");
+        setTimeEntries(
+          item.scheduled_times.map((t) => {
+            const [hour, minute] = t.split(":");
+            return { period: Number(hour) >= 12 ? "오후" : "오전", hour, minute };
+          }),
+        );
+
+        if (!item.photo_path) return;
+        return getSupplementItemPhotoUrl(id, getToken()).then((url) => {
+          objectUrl = url;
+          setPhotoUrl(url);
+        });
+      })
+      .catch(() => {});
+
+    // Blob URL은 브라우저 메모리에 남아있어서 화면을 벗어나면 직접 해제해줘야 함
+    return () => {
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [id, isEditMode]);
 
   const navigate = useNavigate();
   const [toast, setToast] = useState({ show: false, message: "", variant: "success" });

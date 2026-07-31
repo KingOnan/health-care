@@ -9,6 +9,7 @@ from app.models.supplement_item import SupplementItem
 from app.models.supplement_schedule import SupplementSchedule
 from app.schemas.supplement import SupplementItemCreate
 
+# fmt: off
 
 # 영양제 등록
 async def create_supplement_item(
@@ -72,3 +73,39 @@ async def get_supplement_item_list(db: AsyncSession, user_seq: int) -> list[Supp
     )
 
     return list(result.all())
+
+
+# 영양제 항목 상세 조회 (스케줄 포함)
+async def get_supplement_item(
+    db: AsyncSession,
+    user_seq: int,
+    supplement_item_seq: int,
+) -> SupplementItem | None:
+    result = await db.scalar(
+        select(SupplementItem)
+        .where(
+            SupplementItem.supplement_item_seq == supplement_item_seq,
+            SupplementItem.user_seq == user_seq,
+        )
+        .options(
+            selectinload(SupplementItem.schedules)
+            .options(
+                load_only(SupplementSchedule.scheduled_time))
+            )
+    )
+
+    return result
+
+
+# 영양제 항목 사진 경로 조회 (소유자 확인 포함)
+async def get_supplement_item_photo_path(
+    db: AsyncSession,
+    user_seq: int,
+    supplement_item_seq: int,
+) -> str | None:
+    return await db.scalar(
+        select(SupplementItem.photo_path).where(
+            SupplementItem.supplement_item_seq == supplement_item_seq,
+            SupplementItem.user_seq == user_seq,
+        )
+    )
