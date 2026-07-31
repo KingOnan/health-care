@@ -51,7 +51,7 @@ function SupplementList() {
         <h1 className="text-heading font-bold">영양제 목록</h1>
       </header>
 
-      <div className="flex flex-col gap-5 p-6 pt-[100px] pb-26">
+      <div className="flex flex-col gap-7 p-6 pt-[100px] pb-26">
         {items.map((item) => (
           <div
             key={item.id}
@@ -75,7 +75,9 @@ function SupplementList() {
                   {item.paused && " · 일시중지"}
                 </span>
               </div>
-              <ChevronRight size={22} className="text-text-muted" />
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-white">
+                <ChevronRight size={20} strokeWidth={2.5} />
+              </div>
             </button>
             <div className="flex gap-3 px-3 pt-1 pb-3">
               <button

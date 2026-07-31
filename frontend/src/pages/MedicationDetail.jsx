@@ -17,6 +17,25 @@ import BottomNav from "../components/BottomNav";
 import Button from "../components/Button";
 import { INITIAL_ITEMS } from "../data/medicationItems";
 
+// "08:00" -> 오전은 주황, 오후는 파랑으로 강조하고, 시간표처럼 행 사이에 구분선을 넣어 보여줌
+const formatScheduledTime = (time, key, isFirst, isLast) => {
+  const hour = Number(time.slice(0, 2));
+  const isAm = hour < 12;
+  return (
+    <span
+      key={key}
+      className={`grid grid-cols-[3.5rem_auto] ${isFirst ? "pt-0" : "pt-2"} ${
+        isLast ? "pb-0" : "pb-2 border-b border-gray-200"
+      }`}
+    >
+      <span className={isAm ? "text-orange-500" : "text-blue-500"}>
+        {isAm ? "오전" : "오후"}
+      </span>
+      <span>{time.slice(0, 5)}</span>
+    </span>
+  );
+};
+
 const ROW_ICONS = {
   명칭: Tag,
   구분: ClipboardList,
@@ -49,7 +68,12 @@ function MedicationDetail() {
             item.nutritionInfo ?? "암로디핀베실산염 5mg",
           ],
         ]),
-    ["예정 시각", item.times?.join(", ")],
+    [
+      "예정 시각",
+      item.times?.map((t, i, arr) =>
+        formatScheduledTime(t, i, i === 0, i === arr.length - 1),
+      ),
+    ],
     ["복용 방법", item.timing ?? "식후"],
     ["복용 상태", item.paused ? "일시중지" : "복용 중"],
     [
@@ -112,7 +136,7 @@ function MedicationDetail() {
                 {Icon && <Icon size={20} strokeWidth={3} className="text-primary" />}
                 {label}
               </span>
-              <div className="rounded-xl border-t-[5px] border-r border-b border-l border-t-border border-r-gray-300 border-b-gray-300 border-l-gray-300 bg-surface px-4 py-3">
+              <div className="rounded-xl border-t border-r border-b border-l-[6px] border-l-border border-t-gray-300 border-r-gray-300 border-b-gray-300 bg-surface px-4 py-3">
                 <span className="text-lg font-medium whitespace-pre-wrap text-text">
                   {value}
                 </span>
