@@ -7,7 +7,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.models.user import User
-from app.schemas.supplement import SupplementItemCreate, SupplementItemListResponse, SupplementItemResponse
+from app.schemas.supplement import (
+    SupplementItemCreate,
+    SupplementItemListResponse,
+    SupplementItemResponse,
+    SupplementItemUpdate,
+)
 from app.security import get_current_user
 from app.services import supplement as supplement_service
 
@@ -31,6 +36,33 @@ async def create_supplement(
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=e.errors())
 
     return await supplement_service.create_supplement(db, current_user.user_seq, parsedSupplementItemCreate, photo)
+
+
+# 영양제 수정
+@router.post("/update/{supplement_item_seq}", response_model=int)
+async def update_supplement(
+    supplement_item_seq: int,
+    data: Annotated[str, Form()],  # JSON 바디가 아닌 멀티파트 폼에서 온다는 뜻 (파싱 안된 문자열째로 받음)
+    photo: UploadFile | None = File(None),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> int:
+    try:
+        # 스키마 형태로 파싱하고 검증
+        parsedSupplementItemUpdate = SupplementItemUpdate.model_validate_json(data)
+
+    except ValidationError as e:
+        # 검증 실패시 클라이언트 잘못인데 서버 에러(500)가 발생하기 때문에 이를 422 에러로 처리
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=e.errors())
+
+    result = await supplement_service.update_supplement(
+        db, current_user.user_seq, supplement_item_seq, parsedSupplementItemUpdate, photo
+    )
+
+    if result is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="영양제 항목을 찾을 수 없습니다.")
+
+    return result
 
 
 # 영양제 항목 목록 조회
@@ -69,4 +101,5 @@ async def get_supplement_item_photo(
     if photo_path is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="사진을 찾을 수 없습니다.")
 
-    return FileResponse(photo_path)
+    # URL은 항목 ID로 고정이라, 사진이 교체돼도 브라우저가 예전 응답을 캐싱해 재사용하지 않도록 방지
+    return FileResponse(photo_path, headers={"Cache-Control": "no-store"})

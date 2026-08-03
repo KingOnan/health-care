@@ -21,6 +21,27 @@ export async function createSupplement(data, photoFile, token) {
   return response.json();
 }
 
+// 영양제 항목 수정. data는 SupplementItemUpdate 모양의 객체, photoFile은 선택(File | null, 새로 첨부한 경우에만)
+export async function updateSupplement(supplementItemSeq, data, photoFile, token) {
+  const formData = new FormData();
+  formData.append("data", JSON.stringify(data));
+  if (photoFile) {
+    formData.append("photo", photoFile);
+  }
+
+  const response = await fetch(`${API_BASE_URL}/supplement/update/${supplementItemSeq}`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: formData,
+  });
+
+  if (!response.ok) {
+    throw new Error("영양제 수정 실패");
+  }
+
+  return response.json();
+}
+
 // 영양제 항목 목록 조회
 export async function getSupplementItemList(token) {
   const response = await fetch(`${API_BASE_URL}/supplement/list`, {

@@ -8,7 +8,12 @@ import PhotoPicker from "../components/PhotoPicker";
 import SegmentedToggle from "../components/SegmentedToggle";
 import Toast from "../components/Toast";
 import BottomNav from "../components/BottomNav";
-import { createSupplement, getSupplementItem, getSupplementItemPhotoUrl } from "../api/supplement";
+import {
+  createSupplement,
+  getSupplementItem,
+  getSupplementItemPhotoUrl,
+  updateSupplement,
+} from "../api/supplement";
 import { getToken } from "../utils/user";
 
 const TIMING_OPTIONS = [
@@ -33,8 +38,9 @@ function SupplementManage() {
   const [companyName, setCompanyName] = useState("");
   const [nutritionInfo, setNutritionInfo] = useState("");
   const [description, setDescription] = useState("");
+  // scheduleSeq는 기존 스케줄과 매칭하기 위한 값. 새로 추가한 시간은 null(신규로 처리)
   const [timeEntries, setTimeEntries] = useState([
-    { period: "오전", hour: "", minute: "" },
+    { scheduleSeq: null, period: "오전", hour: "", minute: "" },
   ]);
 
   const updateTimeEntry = (index, field, value) => {
@@ -48,7 +54,7 @@ function SupplementManage() {
   const addTimeEntry = () =>
     setTimeEntries((prev) => [
       ...prev,
-      { period: "오전", hour: "", minute: "" },
+      { scheduleSeq: null, period: "오전", hour: "", minute: "" },
     ]);
 
   const removeTimeEntry = (index) =>
@@ -82,9 +88,14 @@ function SupplementManage() {
         setNutritionInfo(item.nutrition_info ?? "");
         setDescription(item.description ?? "");
         setTimeEntries(
-          item.scheduled_times.map((t) => {
-            const [hour, minute] = t.split(":");
-            return { period: Number(hour) >= 12 ? "오후" : "오전", hour, minute };
+          item.schedules.map((schedule) => {
+            const [hour, minute] = schedule.scheduled_time.split(":");
+            return {
+              scheduleSeq: schedule.supplement_schedule_seq,
+              period: Number(hour) >= 12 ? "오후" : "오전",
+              hour,
+              minute,
+            };
           }),
         );
 
@@ -105,46 +116,57 @@ function SupplementManage() {
   const navigate = useNavigate();
   const [toast, setToast] = useState({ show: false, message: "", variant: "success" });
 
-  // 등록 시각 입력(오전/오후 + 시 + 분)을 백엔드가 받는 "HH:MM:SS" 문자열로 변환
-  const buildScheduledTimes = () =>
-    timeEntries.map((entry) => {
-      let hour = Number(entry.hour) % 12;
-      if (entry.period === "오후") hour += 12;
-      const minute = Number(entry.minute) || 0;
-      return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}:00`;
-    });
+  // 시각 입력(오전/오후 + 시 + 분)을 백엔드가 받는 "HH:MM:SS" 문자열로 변환
+  const buildTimeString = (entry) => {
+    let hour = Number(entry.hour) % 12;
+    if (entry.period === "오후") hour += 12;
+    const minute = Number(entry.minute) || 0;
+    return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}:00`;
+  };
+
+  // 등록 요청용: 시각 값만 배열로
+  const buildScheduledTimes = () => timeEntries.map(buildTimeString);
+
+  // 수정 요청용: 기존 스케줄과 매칭할 수 있게 scheduleSeq를 함께 보냄 (신규 시각은 null)
+  const buildSchedules = () =>
+    timeEntries.map((entry) => ({
+      supplement_schedule_seq: entry.scheduleSeq,
+      scheduled_time: buildTimeString(entry),
+    }));
 
   const handleSaveSuccess = (message) => {
     setToast({ show: true, message, variant: "success" });
     setTimeout(() => navigate("/supplement/list"), 1000);
   };
 
-  const handleSaveError = () => {
-    setToast({ show: true, message: "등록에 실패했어요", variant: "error" });
+  const handleSaveError = (message) => {
+    setToast({ show: true, message, variant: "error" });
     setTimeout(() => setToast((prev) => ({ ...prev, show: false })), 1500);
   };
 
-  // 수정 API(3-3)는 아직 없어서 수정 모드는 기존처럼 mock으로 동작
   const handleSave = async () => {
-    if (isEditMode) {
-      handleSaveSuccess("수정했어요");
-      return;
-    }
+    const commonData = {
+      name,
+      timing,
+      status: paused ? "일시중지" : "복용중",
+      product_name: productName || null,
+      company_name: companyName || null,
+      nutrition_info: nutritionInfo || null,
+      description: description || null,
+    };
 
     try {
-      const data = {
-        name,
-        timing,
-        product_name: productName || null,
-        company_name: companyName || null,
-        nutrition_info: nutritionInfo || null,
-        description: description || null,
-        scheduled_times: buildScheduledTimes(),
-      };
-      await createSupplement(data, photoFile, getToken());
-      handleSaveSuccess("저장했어요");
+      if (isEditMode) {
+        const data = { ...commonData, schedules: buildSchedules() };
+        await updateSupplement(id, data, photoFile, getToken());
+        handleSaveSuccess("수정했어요");
+      } else {
+        const data = { ...commonData, scheduled_times: buildScheduledTimes() };
+        await createSupplement(data, photoFile, getToken());
+        handleSaveSuccess("저장했어요");
+      }
     } catch {
-      handleSaveError();
+      handleSaveError(isEditMode ? "수정에 실패했어요" : "등록에 실패했어요");
     }
   };
 

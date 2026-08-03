@@ -33,3 +33,9 @@ def save_photo(photo: UploadFile) -> str:
 
     # 항상 슬래시(/) 구분자로 반환 (윈도우에서 개발해도, 배포 환경인 리눅스에서도 경로가 똑같이 저장되도록)
     return saved_path.as_posix()
+
+
+# 더 이상 참조되지 않는 사진 파일을 삭제 (예: 수정 시 새 사진으로 교체된 기존 파일 정리)
+def delete_photo(path: str) -> None:
+    # missing_ok=True: 파일이 이미 없어도 에러 없이 그냥 넘어감
+    Path(path).unlink(missing_ok=True)

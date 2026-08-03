@@ -86,8 +86,8 @@ function SupplementDetail() {
     ["함량/영양정보", item.nutrition_info],
     [
       "예정 시각",
-      item.scheduled_times.map((t, i, arr) =>
-        formatScheduledTime(t, i, i === 0, i === arr.length - 1),
+      item.schedules.map((schedule, i, arr) =>
+        formatScheduledTime(schedule.scheduled_time, schedule.supplement_schedule_seq, i === 0, i === arr.length - 1),
       ),
     ],
     ["복용 방법", item.timing],
