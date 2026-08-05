@@ -9,7 +9,7 @@ import {
   Clock,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { getSupplementItemList } from "../api/supplement";
+import { deleteSupplement, getSupplementItemList } from "../api/supplement";
 import { getToken } from "../utils/user";
 import Toast from "../components/Toast";
 import ConfirmDialog from "../components/ConfirmDialog";
@@ -32,7 +32,7 @@ function SupplementList() {
   const [pendingEndId, setPendingEndId] = useState(null);
   const pendingDeleteItem = items.find((item) => item.id === pendingDeleteId);
   const pendingEndItem = items.find((item) => item.id === pendingEndId);
-  const { showToast, message, trigger: handleAction } = useToastNavigate({
+  const { showToast, message, variant, trigger: handleAction } = useToastNavigate({
     message: "삭제했어요",
   });
 
@@ -41,6 +41,19 @@ function SupplementList() {
       .then((data) => setItems(data.map(toViewItem)))
       .catch(() => {});
   }, []);
+
+  const handleDelete = async () => {
+    const id = pendingDeleteId;
+    setPendingDeleteId(null);
+
+    try {
+      await deleteSupplement(id, getToken());
+      setItems((prev) => prev.filter((item) => item.id !== id));
+      handleAction("삭제했어요");
+    } catch {
+      handleAction("삭제에 실패했어요", "error");
+    }
+  };
 
   return (
     <div className="theme-supplement flex min-h-svh flex-col bg-page-bg">
@@ -114,10 +127,7 @@ function SupplementList() {
         }
         message="삭제하면 되돌릴 수 없어요."
         onCancel={() => setPendingDeleteId(null)}
-        onConfirm={() => {
-          setPendingDeleteId(null);
-          handleAction();
-        }}
+        onConfirm={handleDelete}
       />
 
       <ConfirmDialog
@@ -136,7 +146,7 @@ function SupplementList() {
         }}
       />
 
-      <Toast show={showToast} message={message} />
+      <Toast show={showToast} message={message} variant={variant} />
 
       <BottomNav active="supplement" />
     </div>

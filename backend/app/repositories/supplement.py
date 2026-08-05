@@ -4,6 +4,7 @@ from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import load_only, selectinload
 
+from app.database import execute_and_get_rowcount
 from app.models.supplement_item import SupplementItem
 from app.models.supplement_schedule import SupplementSchedule
 from app.schemas.supplement import SupplementItemCreate, SupplementItemUpdate, SupplementScheduleUpdate
@@ -205,3 +206,22 @@ async def get_supplement_item_photo_path(
             SupplementItem.user_seq == user_seq,
         )
     )
+
+
+# 영양제 삭제 (cascade)
+async def delete_supplement(
+    db: AsyncSession,
+    user_seq: int,
+    supplement_item_seq: int,
+) -> bool:
+    rowcount = await execute_and_get_rowcount(
+        db,
+        # fmt: off
+        delete(SupplementItem)
+        .where(
+            SupplementItem.user_seq == user_seq,
+            SupplementItem.supplement_item_seq == supplement_item_seq,
+        ),
+    )
+
+    return rowcount > 0

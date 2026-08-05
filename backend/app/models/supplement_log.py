@@ -15,8 +15,8 @@ class SupplementLog(Base):
         primary_key=True, autoincrement=True, comment="영양제 복용 기록 기본키"
     )
     supplement_schedule_seq: Mapped[int] = mapped_column(
-        ForeignKey("supplement_schedules.supplement_schedule_seq"),
-        comment="영양제 예정 시각 기본키(외래키)",
+        ForeignKey("supplement_schedules.supplement_schedule_seq", ondelete="CASCADE"),
+        comment="영양제 예정 시각 기본키(외래키). 스케줄이 삭제되면 딸린 복용 기록도 함께 삭제됨",
     )
     log_date: Mapped[date] = mapped_column(Date, comment="복용 기록 날짜")
     status: Mapped[CheckStatus] = mapped_column(Enum(CheckStatus), comment="복용 여부")

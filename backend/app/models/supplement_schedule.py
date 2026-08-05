@@ -14,7 +14,7 @@ class SupplementSchedule(Base):
         primary_key=True, autoincrement=True, comment="영양제 스케줄 기본키"
     )
     supplement_item_seq: Mapped[int] = mapped_column(
-        ForeignKey("supplement_items.supplement_item_seq"),
-        comment="영양제 기본키(외래키)",
+        ForeignKey("supplement_items.supplement_item_seq", ondelete="CASCADE"),
+        comment="영양제 기본키(외래키). 항목이 삭제되면 딸린 스케줄도 함께 삭제됨",
     )
     scheduled_time: Mapped[time] = mapped_column(Time, comment="복용 시간")

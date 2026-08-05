@@ -103,3 +103,18 @@ async def get_supplement_item_photo(
 
     # URL은 항목 ID로 고정이라, 사진이 교체돼도 브라우저가 예전 응답을 캐싱해 재사용하지 않도록 방지
     return FileResponse(photo_path, headers={"Cache-Control": "no-store"})
+
+
+# 영양제 삭제 (스케줄/복용 기록은 DB에서 cascade로 함께 삭제됨)
+@router.delete("/{supplement_item_seq}", response_model=int)
+async def delete_supplement(
+    supplement_item_seq: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> int:
+    deleted = await supplement_service.delete_supplement(db, current_user.user_seq, supplement_item_seq)
+
+    if not deleted:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="영양제 항목을 찾을 수 없습니다.")
+
+    return supplement_item_seq

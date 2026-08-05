@@ -42,6 +42,20 @@ export async function updateSupplement(supplementItemSeq, data, photoFile, token
   return response.json();
 }
 
+// 영양제 항목 삭제
+export async function deleteSupplement(supplementItemSeq, token) {
+  const response = await fetch(`${API_BASE_URL}/supplement/${supplementItemSeq}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    throw new Error("영양제 삭제 실패");
+  }
+
+  return response.json();
+}
+
 // 영양제 항목 목록 조회
 export async function getSupplementItemList(token) {
   const response = await fetch(`${API_BASE_URL}/supplement/list`, {

@@ -115,5 +115,29 @@ async def get_supplement_item(
 
 
 # 영양제 항목 사진 경로 조회 (소유자 확인 포함)
-async def get_supplement_item_photo_path(db: AsyncSession, user_seq: int, supplement_item_seq: int) -> str | None:
+async def get_supplement_item_photo_path(
+    db: AsyncSession,
+    user_seq: int,
+    supplement_item_seq: int,
+) -> str | None:
     return await supplement_repo.get_supplement_item_photo_path(db, user_seq, supplement_item_seq)
+
+
+# 영양제 삭제
+async def delete_supplement(
+    db: AsyncSession,
+    user_seq: int,
+    supplement_item_seq: int,
+) -> bool:
+    photo_path = await supplement_repo.get_supplement_item_photo_path(db, user_seq, supplement_item_seq)
+    deleted = await supplement_repo.delete_supplement(db, user_seq, supplement_item_seq)
+
+    if not deleted:
+        return False
+
+    await db.commit()
+
+    if photo_path is not None:
+        await run_in_threadpool(delete_photo, photo_path)
+
+    return True
