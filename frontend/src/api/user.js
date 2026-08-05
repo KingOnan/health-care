@@ -12,7 +12,7 @@ export async function login(userId, password) {
     throw new Error("로그인 실패");
   }
 
-  const data = await response.json();
+  const { data } = await response.json();
   return { accessToken: data.access_token };
 }
 
@@ -26,5 +26,6 @@ export async function getMe(token) {
     throw new Error("사용자 정보 조회 실패");
   }
 
-  return response.json();
+  const { data } = await response.json();
+  return data;
 }
