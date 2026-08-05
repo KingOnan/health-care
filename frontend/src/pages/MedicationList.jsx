@@ -60,7 +60,7 @@ function MedicationList() {
                 <span className="flex items-center gap-1.5 text-lg text-text-muted">
                   <Clock size={18} strokeWidth={3} className="shrink-0 text-primary" />
                   {item.times.join(", ")}
-                  {item.paused && " · 일시중지"}
+                  {item.paused && " · 중지"}
                 </span>
               </div>
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-white">

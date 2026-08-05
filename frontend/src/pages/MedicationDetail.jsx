@@ -75,7 +75,7 @@ function MedicationDetail() {
       ),
     ],
     ["복용 방법", item.timing ?? "식후"],
-    ["복용 상태", item.paused ? "일시중지" : "복용 중"],
+    ["복용 상태", item.paused ? "중지" : "복용 중"],
     [
       "설명",
       item.description ?? "고혈압 치료에 사용되는 칼슘채널차단제예요.",

@@ -19,7 +19,7 @@ const TIMING_OPTIONS = [
 
 const STATUS_OPTIONS = [
   { label: "복용 중", value: false },
-  { label: "일시중지", value: true },
+  { label: "중지", value: true },
 ];
 
 const PRESCRIPTION_OPTIONS = [

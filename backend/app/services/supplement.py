@@ -2,6 +2,7 @@ from fastapi import UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.concurrency import run_in_threadpool
 
+from app.models.enums import SupplementEatStatus
 from app.photo_storage import delete_photo, save_photo
 from app.repositories import supplement as supplement_repo
 from app.schemas.supplement import (
@@ -131,13 +132,24 @@ async def delete_supplement(
 ) -> bool:
     photo_path = await supplement_repo.get_supplement_item_photo_path(db, user_seq, supplement_item_seq)
     deleted = await supplement_repo.delete_supplement(db, user_seq, supplement_item_seq)
-
-    if not deleted:
-        return False
-
     await db.commit()
 
     if photo_path is not None:
         await run_in_threadpool(delete_photo, photo_path)
 
-    return True
+    return deleted
+
+
+# 영양제 복용 상태 변경
+async def update_supplement_status(
+    db: AsyncSession,
+    user_seq: int,
+    supplement_item_seq: int,
+    status: SupplementEatStatus,
+) -> bool:
+    updated = await supplement_repo.update_supplement_status(db, user_seq, supplement_item_seq, status)
+
+    if updated:
+        await db.commit()
+
+    return updated

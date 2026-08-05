@@ -8,11 +8,17 @@ class EatTiming(str, enum.Enum):
     AFTER = "식후"
 
 
-# 약, 영양제 복용 상태
-class EatStatus(str, enum.Enum):
+# 약 복용 상태
+class MedicationEatStatus(str, enum.Enum):
     ING = "복용중"
-    PAUSE = "일시중지"
+    PAUSE = "중지"
     END = "종료"
+
+
+# 영양제 복용 상태 (약과 달리 종료 개념이 없음 — 완전히 그만 먹는 경우는 삭제로 처리)
+class SupplementEatStatus(str, enum.Enum):
+    ING = "복용중"
+    PAUSE = "중지"
 
 
 # 혈당 측정 시기

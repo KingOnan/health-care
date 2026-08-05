@@ -3,13 +3,14 @@ import {
   PillBottle,
   ChevronRight,
   Pencil,
-  CheckCheck,
+  Pause,
+  Play,
   Trash2,
   Tag,
   Clock,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { deleteSupplement, getSupplementItemList } from "../api/supplement";
+import { deleteSupplement, getSupplementItemList, updateSupplementStatus } from "../api/supplement";
 import { getToken } from "../utils/user";
 import Toast from "../components/Toast";
 import ConfirmDialog from "../components/ConfirmDialog";
@@ -22,16 +23,16 @@ const toViewItem = (item) => ({
   id: item.supplement_item_seq,
   name: item.name,
   times: item.scheduled_times.map((t) => t.slice(0, 5)),
-  paused: item.status === "일시중지",
+  paused: item.status === "중지",
 });
 
 function SupplementList() {
   const navigate = useNavigate();
   const [items, setItems] = useState([]);
   const [pendingDeleteId, setPendingDeleteId] = useState(null);
-  const [pendingEndId, setPendingEndId] = useState(null);
+  const [pendingPauseId, setPendingPauseId] = useState(null);
   const pendingDeleteItem = items.find((item) => item.id === pendingDeleteId);
-  const pendingEndItem = items.find((item) => item.id === pendingEndId);
+  const pendingPauseItem = items.find((item) => item.id === pendingPauseId);
   const { showToast, message, variant, trigger: handleAction } = useToastNavigate({
     message: "삭제했어요",
   });
@@ -41,6 +42,22 @@ function SupplementList() {
       .then((data) => setItems(data.map(toViewItem)))
       .catch(() => {});
   }, []);
+
+  const handlePauseToggle = async () => {
+    const id = pendingPauseId;
+    const wasPaused = pendingPauseItem?.paused;
+    setPendingPauseId(null);
+
+    try {
+      await updateSupplementStatus(id, wasPaused ? "복용중" : "중지", getToken());
+      setItems((prev) =>
+        prev.map((item) => (item.id === id ? { ...item, paused: !item.paused } : item)),
+      );
+      handleAction(wasPaused ? "재개했어요" : "중지했어요");
+    } catch {
+      handleAction(wasPaused ? "재개에 실패했어요" : "중지에 실패했어요", "error");
+    }
+  };
 
   const handleDelete = async () => {
     const id = pendingDeleteId;
@@ -85,7 +102,7 @@ function SupplementList() {
                 <span className="flex items-center gap-1.5 text-lg text-text-muted">
                   <Clock size={18} strokeWidth={3} className="shrink-0 text-primary" />
                   {item.times.join(", ")}
-                  {item.paused && " · 일시중지"}
+                  {item.paused && " · 중지"}
                 </span>
               </div>
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-white">
@@ -101,11 +118,11 @@ function SupplementList() {
                 수정
               </button>
               <button
-                onClick={() => setPendingEndId(item.id)}
+                onClick={() => setPendingPauseId(item.id)}
                 className="flex h-[46px] flex-1 items-center justify-center gap-1 rounded-xl border-2 border-text-muted bg-surface text-body font-semibold text-text-muted transition active:scale-[97.5%]"
               >
-                <CheckCheck size={18} />
-                종료
+                {item.paused ? <Play size={18} /> : <Pause size={18} />}
+                {item.paused ? "재개" : "중지"}
               </button>
               <button
                 onClick={() => setPendingDeleteId(item.id)}
@@ -131,19 +148,22 @@ function SupplementList() {
       />
 
       <ConfirmDialog
-        open={pendingEndId !== null}
+        open={pendingPauseId !== null}
         title={
-          pendingEndItem &&
-          `${pendingEndItem.name}${eulReul(pendingEndItem.name)} 종료할까요?`
+          pendingPauseItem &&
+          `${pendingPauseItem.name}${eulReul(pendingPauseItem.name)} ${
+            pendingPauseItem.paused ? "다시 복용할까요?" : "중지할까요?"
+          }`
         }
-        message="종료하면 오늘 복용 목록에 더 이상 나오지 않아요."
-        confirmLabel="종료"
+        message={
+          pendingPauseItem?.paused
+            ? "오늘 복용 목록에 다시 나타나요."
+            : "오늘 복용 목록에서만 빠지고, 언제든 다시 재개할 수 있어요."
+        }
+        confirmLabel={pendingPauseItem?.paused ? "재개" : "중지"}
         tone="primary"
-        onCancel={() => setPendingEndId(null)}
-        onConfirm={() => {
-          setPendingEndId(null);
-          handleAction("종료했어요");
-        }}
+        onCancel={() => setPendingPauseId(null)}
+        onConfirm={handlePauseToggle}
       />
 
       <Toast show={showToast} message={message} variant={variant} />

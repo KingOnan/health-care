@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import load_only, selectinload
 
 from app.database import execute_and_get_rowcount
+from app.models.enums import SupplementEatStatus
 from app.models.supplement_item import SupplementItem
 from app.models.supplement_schedule import SupplementSchedule
 from app.schemas.supplement import SupplementItemCreate, SupplementItemUpdate, SupplementScheduleUpdate
@@ -225,3 +226,26 @@ async def delete_supplement(
     )
 
     return rowcount > 0
+
+
+# 영양제 복용 상태 변경
+async def update_supplement_status(
+    db: AsyncSession,
+    user_seq: int,
+    supplement_item_seq: int,
+    status: SupplementEatStatus,
+) -> bool:
+    data = await db.scalar(
+        # fmt: off
+        select(SupplementItem).where(
+            SupplementItem.user_seq == user_seq,
+            SupplementItem.supplement_item_seq == supplement_item_seq
+        )
+    )
+
+    if data is None:
+        return False
+
+    data.status = status
+
+    return True

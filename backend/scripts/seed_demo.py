@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import SessionLocal
 from app.models.blood_pressure_record import BloodPressureRecord
 from app.models.blood_sugar_record import BloodSugarRecord
-from app.models.enums import CheckStatus, CheckTiming, EatStatus, EatTiming
+from app.models.enums import CheckStatus, CheckTiming, EatTiming, MedicationEatStatus, SupplementEatStatus
 from app.models.medication_item import MedicationItem
 from app.models.medication_log import MedicationLog
 from app.models.medication_schedule import MedicationSchedule
@@ -175,7 +175,7 @@ async def seed_demo() -> None:
                 product_name=sample["product_name"],
                 company_name=sample["company_name"],
                 timing=sample["timing"],
-                status=EatStatus.ING,
+                status=SupplementEatStatus.ING,
             )
             db.add(item)
             await db.flush()
@@ -209,7 +209,7 @@ async def seed_demo() -> None:
                 product_name=medication_sample["product_name"],
                 company_name=medication_sample["company_name"],
                 timing=medication_sample["timing"],
-                status=EatStatus.ING,
+                status=MedicationEatStatus.ING,
                 is_prescription=medication_sample["is_prescription"],
             )
             db.add(medication_item)

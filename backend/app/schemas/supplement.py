@@ -2,14 +2,14 @@ from datetime import datetime, time
 
 from pydantic import BaseModel
 
-from app.models.enums import EatStatus, EatTiming
+from app.models.enums import EatTiming, SupplementEatStatus
 
 
 # 영양제 항목 등록 요청
 class SupplementItemCreate(BaseModel):
     name: str
     timing: EatTiming
-    status: EatStatus
+    status: SupplementEatStatus
     product_name: str | None = None
     company_name: str | None = None
     nutrition_info: str | None = None
@@ -29,7 +29,7 @@ class SupplementScheduleUpdate(BaseModel):
 class SupplementItemUpdate(BaseModel):
     name: str
     timing: EatTiming
-    status: EatStatus
+    status: SupplementEatStatus
     product_name: str | None = None
     company_name: str | None = None
     nutrition_info: str | None = None
@@ -53,7 +53,7 @@ class SupplementItemResponse(BaseModel):
     description: str | None
     photo_path: str | None
     timing: EatTiming
-    status: EatStatus
+    status: SupplementEatStatus
     schedules: list[SupplementScheduleResponse]
     created_at: datetime
 
@@ -62,5 +62,10 @@ class SupplementItemResponse(BaseModel):
 class SupplementItemListResponse(BaseModel):
     supplement_item_seq: int
     name: str
-    status: EatStatus
+    status: SupplementEatStatus
     scheduled_times: list[time]
+
+
+# 영양제 복용 상태 변경 요청
+class SupplementStatusUpdate(BaseModel):
+    status: SupplementEatStatus

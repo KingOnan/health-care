@@ -24,7 +24,7 @@ const TIMING_OPTIONS = [
 
 const STATUS_OPTIONS = [
   { label: "복용 중", value: false },
-  { label: "일시중지", value: true },
+  { label: "중지", value: true },
 ];
 
 function SupplementManage() {
@@ -82,7 +82,7 @@ function SupplementManage() {
       .then((item) => {
         setName(item.name);
         setTiming(item.timing);
-        setPaused(item.status === "일시중지");
+        setPaused(item.status === "중지");
         setProductName(item.product_name ?? "");
         setCompanyName(item.company_name ?? "");
         setNutritionInfo(item.nutrition_info ?? "");
@@ -148,7 +148,7 @@ function SupplementManage() {
     const commonData = {
       name,
       timing,
-      status: paused ? "일시중지" : "복용중",
+      status: paused ? "중지" : "복용중",
       product_name: productName || null,
       company_name: companyName || null,
       nutrition_info: nutritionInfo || null,
