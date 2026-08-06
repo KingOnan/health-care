@@ -14,6 +14,7 @@ from app.schemas.supplement import (
     SupplementItemResponse,
     SupplementItemUpdate,
     SupplementStatusUpdate,
+    SupplementTodayItemResponse,
 )
 from app.security import get_current_user
 from app.services import supplement as supplement_service
@@ -142,3 +143,13 @@ async def update_supplement_status(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="영양제 항목을 찾을 수 없습니다.")
 
     return ApiResponse()
+
+
+# 오늘 복용 항목 목록 조회
+@router.get("/today/list", response_model=ApiResponse[list[SupplementTodayItemResponse]])
+async def get_supplement_item_today_list(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> ApiResponse[list[SupplementTodayItemResponse]]:
+    items = await supplement_service.get_supplement_item_today_list(db, current_user.user_seq)
+    return ApiResponse(data=items)

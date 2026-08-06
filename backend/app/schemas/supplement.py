@@ -2,7 +2,7 @@ from datetime import datetime, time
 
 from pydantic import BaseModel
 
-from app.models.enums import EatTiming, SupplementEatStatus
+from app.models.enums import CheckStatus, EatTiming, SupplementEatStatus
 
 
 # 영양제 항목 등록 요청
@@ -69,3 +69,15 @@ class SupplementItemListResponse(BaseModel):
 # 영양제 복용 상태 변경 요청
 class SupplementStatusUpdate(BaseModel):
     status: SupplementEatStatus
+
+
+# 영양제 오늘 복용 항목 목록 조회 응답
+class SupplementTodayItemResponse(BaseModel):
+    supplement_item_seq: int
+    supplement_schedule_seq: int
+    name: str
+    scheduled_time: time
+    time_group: str  # 아침/점심/저녁/밤
+    status: CheckStatus  # 미확인/복용완료/건너뛰기
+    is_next: bool
+    is_missed: bool  # 이미 지난 시간대인데 아직 미확인인 경우

@@ -89,6 +89,20 @@ export async function getSupplementItemList(token) {
   return data;
 }
 
+// 영양제 오늘 복용 항목 목록 조회. 이미 시간대 분류/정렬/다음 항목 판단까지 서버가 끝낸 상태로 내려줌
+export async function getSupplementItemTodayList(token) {
+  const response = await fetch(`${API_BASE_URL}/supplement/today/list`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    throw new Error("오늘 복용 항목 조회 실패");
+  }
+
+  const { data } = await response.json();
+  return data;
+}
+
 // 영양제 항목 사진 조회. 인증이 필요해서 <img src>로 바로 못 쓰고, 받아온 바이너리를 Blob URL로 변환해서 반환
 export async function getSupplementItemPhotoUrl(supplementItemSeq, token) {
   const response = await fetch(`${API_BASE_URL}/supplement/${supplementItemSeq}/photo`, {

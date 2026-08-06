@@ -1,12 +1,15 @@
+from dataclasses import dataclass
 from datetime import time
 
-from sqlalchemy import delete, select
+from sqlalchemy import and_, delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import load_only, selectinload
 
 from app.database import execute_and_get_rowcount
+from app.kst import today_kst
 from app.models.enums import SupplementEatStatus
 from app.models.supplement_item import SupplementItem
+from app.models.supplement_log import SupplementLog
 from app.models.supplement_schedule import SupplementSchedule
 from app.schemas.supplement import SupplementItemCreate, SupplementItemUpdate, SupplementScheduleUpdate
 
@@ -249,3 +252,48 @@ async def update_supplement_status(
     data.status = status
 
     return True
+
+
+# 오늘 복용 항목 목록 조회에서 스케줄 하나(=오늘의 occurrence 하나)를 표현
+@dataclass(frozen=True)
+class TodaySupplementRecord:
+    schedule: SupplementSchedule
+    item: SupplementItem
+    log: SupplementLog | None
+
+
+# 영양제 오늘 복용 항목 목록 조회
+async def get_supplement_item_today_list(
+    db: AsyncSession,
+    user_seq: int,
+) -> list[TodaySupplementRecord]:
+    today = today_kst()
+
+    result = await db.execute(
+        # fmt: off
+        select(SupplementSchedule, SupplementItem, SupplementLog)
+        .join(
+            SupplementItem,
+            SupplementSchedule.supplement_item_seq == SupplementItem.supplement_item_seq
+        )
+        .outerjoin(
+            SupplementLog,
+            and_(
+                SupplementLog.supplement_schedule_seq == SupplementSchedule.supplement_schedule_seq,
+                SupplementLog.log_date == today,
+            ),
+        )
+        .where(
+            SupplementItem.user_seq == user_seq,
+            SupplementItem.status != SupplementEatStatus.PAUSE,
+        )
+    )
+
+    return [
+        TodaySupplementRecord(
+            schedule=schedule,
+            item=item,
+            log=log,
+        )
+        for schedule, item, log in result.tuples()
+    ]

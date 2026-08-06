@@ -1,4 +1,4 @@
-import { useState, Fragment } from "react";
+import { useEffect, useState, Fragment } from "react";
 import { motion } from "framer-motion";
 import { PillBottle, List, Bot } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -8,33 +8,39 @@ import AddMenuButton from "../components/AddMenuButton";
 import IntakeItemBox from "../components/IntakeItemBox";
 import IntakeActionDialog from "../components/IntakeActionDialog";
 import GroupHeader from "../components/GroupHeader";
-import { INITIAL_ITEMS } from "../data/supplementItems";
-import { getTimeGroup, getCurrentTimeGroup } from "../utils/timeGroup";
+import { getSupplementItemTodayList } from "../api/supplement";
+import { getToken } from "../utils/user";
 
-const GROUP_ORDER = ["아침", "점심", "저녁", "밤"];
-const currentGroupIndex = GROUP_ORDER.indexOf(getCurrentTimeGroup());
-const isPastGroup = (group) => GROUP_ORDER.indexOf(group) < currentGroupIndex;
+// 백엔드 CheckStatus 값을 화면이 쓰는 status 문자열로 변환
+const STATUS_MAP = { 미확인: "pending", 복용완료: "done", 건너뛰기: "skipped" };
+
+// 백엔드 응답(SupplementTodayItemResponse)을 화면이 쓰는 occurrence 모양으로 변환.
+// 시간대 분류/정렬/다음 항목·놓침 판단은 서버가 이미 끝내서 내려줌
+const toOccurrence = (item) => ({
+  key: item.supplement_schedule_seq,
+  name: item.name,
+  time: item.scheduled_time.slice(0, 5),
+  group: item.time_group,
+  status: STATUS_MAP[item.status],
+  isNext: item.is_next,
+  isMissed: item.is_missed,
+});
 
 function SupplementRecord() {
   const navigate = useNavigate();
-  const [statusByKey, setStatusByKey] = useState({});
+  const [occurrences, setOccurrences] = useState([]);
   const [activeOcc, setActiveOcc] = useState(null);
+  // 체크/취소 API(3-10, 3-11)가 아직 없어서, 탭한 항목의 상태만 화면에서 잠깐 바꿔 보여줌 (새로고침하면 서버 값으로 되돌아감)
+  const [statusOverride, setStatusOverride] = useState({});
 
-  const activeItems = INITIAL_ITEMS.filter((item) => !item.paused);
-
-  const occurrences = activeItems
-    .flatMap((item) =>
-      item.times.map((time) => ({
-        key: `${item.id}-${time}`,
-        name: item.name,
-        time,
-        group: getTimeGroup(time),
-      })),
-    )
-    .sort((a, b) => a.time.localeCompare(b.time));
+  useEffect(() => {
+    getSupplementItemTodayList(getToken())
+      .then((data) => setOccurrences(data.map(toOccurrence)))
+      .catch(() => {});
+  }, []);
 
   const setStatus = (key, status) => {
-    setStatusByKey((prev) => {
+    setStatusOverride((prev) => {
       const next = { ...prev };
       if (prev[key] === status) {
         delete next[key];
@@ -45,32 +51,17 @@ function SupplementRecord() {
     });
   };
 
-  const nextKey = occurrences.find(
-    (occ) => !statusByKey[occ.key] && !isPastGroup(occ.group),
-  )?.key;
-
-  const isGroupComplete = (group) => {
-    const items = occurrences.filter((occ) => occ.group === group);
-    return items.length > 0 && items.every((occ) => statusByKey[occ.key]);
-  };
-
-  const sortedGroups = [...GROUP_ORDER].sort((a, b) => {
-    const aPast = isPastGroup(a);
-    const bPast = isPastGroup(b);
-    if (aPast !== bPast) return aPast ? 1 : -1;
-    if (aPast && bPast) return 0;
-
-    const aDone = isGroupComplete(a);
-    const bDone = isGroupComplete(b);
-    return aDone === bDone ? 0 : aDone ? 1 : -1;
-  });
-
-  const visibleGroups = sortedGroups
-    .map((group) => ({
-      group,
-      occurrences: occurrences.filter((occ) => occ.group === group),
-    }))
-    .filter(({ occurrences }) => occurrences.length > 0);
+  // occurrences는 서버가 이미 정렬해서 준 순서라, 그 순서 그대로 연속된 같은 그룹끼리만 묶음
+  // (고정된 아침→점심→저녁→밤 순으로 다시 나누면 "지난 시간대는 뒤로"가 무시돼버림)
+  const visibleGroups = [];
+  for (const occ of occurrences) {
+    const lastGroup = visibleGroups[visibleGroups.length - 1];
+    if (lastGroup && lastGroup.group === occ.group) {
+      lastGroup.occurrences.push(occ);
+    } else {
+      visibleGroups.push({ group: occ.group, occurrences: [occ] });
+    }
+  }
 
   return (
     <div className="theme-supplement flex flex-col gap-8 px-3 pt-22 pb-26">
@@ -103,7 +94,7 @@ function SupplementRecord() {
 
       {visibleGroups.map(({ group, occurrences: groupOccurrences }, index) => {
         const completedCount = groupOccurrences.filter(
-          (occ) => statusByKey[occ.key],
+          (occ) => (statusOverride[occ.key] ?? occ.status) !== "pending",
         ).length;
         return (
           <Fragment key={group}>
@@ -119,18 +110,21 @@ function SupplementRecord() {
                 totalCount={groupOccurrences.length}
               />
               <div className="flex flex-col gap-3">
-                {groupOccurrences.map((occ) => (
-                  <IntakeItemBox
-                    key={occ.key}
-                    name={occ.name}
-                    time={occ.time}
-                    status={statusByKey[occ.key] ?? "pending"}
-                    isNext={occ.key === nextKey}
-                    isMissed={isPastGroup(occ.group) && !statusByKey[occ.key]}
-                    icon={PillBottle}
-                    onPress={() => setActiveOcc(occ)}
-                  />
-                ))}
+                {groupOccurrences.map((occ) => {
+                  const status = statusOverride[occ.key] ?? occ.status;
+                  return (
+                    <IntakeItemBox
+                      key={occ.key}
+                      name={occ.name}
+                      time={occ.time}
+                      status={status}
+                      isNext={occ.isNext}
+                      isMissed={occ.isMissed && status === "pending"}
+                      icon={PillBottle}
+                      onPress={() => setActiveOcc(occ)}
+                    />
+                  );
+                })}
               </div>
             </motion.section>
           </Fragment>
@@ -141,7 +135,7 @@ function SupplementRecord() {
         open={activeOcc !== null}
         name={activeOcc?.name}
         time={activeOcc?.time}
-        status={activeOcc && statusByKey[activeOcc.key]}
+        status={activeOcc && (statusOverride[activeOcc.key] ?? activeOcc.status)}
         onClose={() => setActiveOcc(null)}
         onDone={() => {
           setStatus(activeOcc.key, "done");
