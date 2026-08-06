@@ -187,6 +187,12 @@ async def get_supplement_item_today_list(
     db: AsyncSession,
     user_seq: int,
 ) -> list[SupplementTodayItemResponse]:
+
+    # 1. records(레파지토리가 준 원본 데이터)를 하나씩 돌면서, 각각 시간대 분류·상태·놓침 여부를 계산해서
+    #    SupplementTodayItemResponse로 만들고 result에 쌓음 (is_next는 일단 False)
+    # 2. result를 "지났는지 → 시간대 순서 → 정확한 시각" 순으로 정렬 — 지난 시간대는 뒤로, 나머지는 아침→점심→저녁→밤 순
+    # 3. 정렬된 result를 앞에서부터 훑다가, 안 지났고 미확인인 첫 항목에만 is_next = True 찍고 멈춤
+
     records = await supplement_repo.get_supplement_item_today_list(db, user_seq)
     now = now_kst().time()
 
