@@ -198,8 +198,8 @@ async def get_supplement_item_today_list(
 
     # 1. records(레파지토리가 준 원본 데이터)를 하나씩 돌면서, 각각 시간대 분류·상태·놓침 여부를 계산해서
     #    SupplementTodayItemResponse로 만들고 result에 쌓음 (is_next는 일단 False)
-    # 2. result를 "지났는지 → 그룹 전부 체크됐는지 → 시간대 순서 → 정확한 시각" 순으로 정렬
-    #    — 지난 시간대는 뒤로, 전부 체크된 그룹은 더 뒤로, 나머지는 아침→점심→저녁→밤 순
+    # 2. result를 정렬 — 지금이 속한 시간대를 맨 앞으로 두고 나머지는 순환 순서로(예: 지금이 저녁이면
+    #    저녁→밤→아침→점심), 단 오늘 전체가 전부 체크됐으면 그냥 아침→점심→저녁→밤 고정 순서로 보여줌
     # 3. 정렬된 result를 앞에서부터 훑다가, 안 지났고 미확인인 첫 항목에만 is_next = True 찍고 멈춤
 
     records = await supplement_repo.get_supplement_item_today_list(db, user_seq)
@@ -214,6 +214,7 @@ async def get_supplement_item_today_list(
             SupplementTodayItemResponse(
                 supplement_item_seq=r.item.supplement_item_seq,
                 supplement_schedule_seq=r.schedule.supplement_schedule_seq,
+                supplement_log_seq=r.log.supplement_log_seq if r.log is not None else None,
                 name=r.item.name,
                 scheduled_time=r.schedule.scheduled_time,
                 time_group=time_group,
@@ -223,18 +224,27 @@ async def get_supplement_item_today_list(
             )
         )
 
-    # 그룹(아침/점심/저녁/밤) 안의 항목이 전부 체크(미확인 없음)됐는지 미리 계산
+    # 오늘 전체가 전부 체크됐으면("미확인" 항목이 하나도 없으면) 순환 없이 고정 순서로 보여줌
+    all_done = all(item.status is not None for item in result)
+
+    # 그룹(아침/점심/저녁/밤)별로 그 안의 항목이 전부 체크됐는지 미리 계산 — 다 끝난 그룹은
+    # 로테이션 순서와 무관하게 아직 안 끝난 그룹들보다 뒤로 감
     group_all_done = {
         group: all(item.status is not None for item in result if item.time_group == group) for group in _GROUP_ORDER
     }
 
-    # 지난 시간대는 뒤로, 그 안에서는 전부 체크된 그룹은 더 뒤로, 나머지는 아침→점심→저녁→밤 순,
+    # 지금이 속한 시간대를 맨 앞으로 두고, 나머지는 그 뒤로 순환(예: 지금이 저녁이면 저녁→밤→아침→점심)
+    current_group = _time_group(now)
+    current_index = _GROUP_ORDER.index(current_group)
+    rotated_order = _GROUP_ORDER[current_index:] + _GROUP_ORDER[:current_index]
+    group_order = _GROUP_ORDER if all_done else rotated_order
+
+    # 안 끝난 그룹은 로테이션 순서로 먼저, 다 끝난 그룹은 그 뒤에(전체가 다 끝났으면 이 구분은 무의미해짐),
     # 같은 그룹 안에서는 이른 시각 순
     result.sort(
         key=lambda item: (
-            _is_group_passed(item.time_group, now),  # 시간대가 지났는가?
-            group_all_done[item.time_group],  # 그룹이 전부 체크됐는가?
-            _GROUP_ORDER.index(item.time_group),  # 그룹 순서
+            False if all_done else group_all_done[item.time_group],  # 그룹이 전부 체크됐는가?
+            group_order.index(item.time_group),
             item.scheduled_time,  # 정확한 시각
         )
     )
@@ -261,3 +271,17 @@ async def upsert_supplement_log(
         await db.commit()
 
     return upserted
+
+
+# 영양제 복용 체크 삭제
+async def delete_supplement_log(
+    db: AsyncSession,
+    user_seq: int,
+    supplement_log_seq: int,
+) -> bool:
+    deleted = await supplement_repo.delete_supplement_log(db, user_seq, supplement_log_seq)
+
+    if deleted:
+        await db.commit()
+
+    return deleted

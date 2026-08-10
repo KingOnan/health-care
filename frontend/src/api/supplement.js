@@ -105,6 +105,18 @@ export async function checkSupplement(supplementScheduleSeq, checkStatus, token)
   }
 }
 
+// 영양제 복용 체크 취소 (되돌리기)
+export async function deleteSupplementLog(supplementLogSeq, token) {
+  const response = await fetch(`${API_BASE_URL}/supplement/check/${supplementLogSeq}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    throw new Error("영양제 복용 체크 취소 실패");
+  }
+}
+
 // 영양제 오늘 복용 항목 목록 조회. 이미 시간대 분류/정렬/다음 항목 판단까지 서버가 끝낸 상태로 내려줌
 export async function getSupplementItemTodayList(token) {
   const response = await fetch(`${API_BASE_URL}/supplement/today/list`, {

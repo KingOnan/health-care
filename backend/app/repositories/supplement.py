@@ -348,3 +348,36 @@ async def upsert_supplement_log(
         existing.actual_time = now_kst().time()
 
     return True
+
+
+# 영양제 복용 체크 삭제
+async def delete_supplement_log(
+    db: AsyncSession,
+    user_seq: int,
+    supplement_log_seq: int,
+) -> bool:
+    existing = await db.scalar(
+        # fmt: off
+        select(SupplementLog)
+        .join(
+            SupplementSchedule,
+            SupplementSchedule.supplement_schedule_seq == SupplementLog.supplement_schedule_seq
+        )
+        .join(
+            SupplementItem,
+            and_(
+                SupplementItem.supplement_item_seq == SupplementSchedule.supplement_item_seq,
+                SupplementItem.user_seq == user_seq
+            )
+        )
+        .where(
+            SupplementLog.supplement_log_seq == supplement_log_seq
+        )
+    )
+
+    if existing is None:
+        return False
+
+    await db.delete(existing)
+
+    return True

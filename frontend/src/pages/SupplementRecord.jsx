@@ -9,7 +9,7 @@ import IntakeItemBox from "../components/IntakeItemBox";
 import IntakeActionDialog from "../components/IntakeActionDialog";
 import GroupHeader from "../components/GroupHeader";
 import Toast from "../components/Toast";
-import { checkSupplement, getSupplementItemTodayList } from "../api/supplement";
+import { checkSupplement, deleteSupplementLog, getSupplementItemTodayList } from "../api/supplement";
 import { getToken } from "../utils/user";
 import useToastNavigate from "../hooks/useToastNavigate";
 
@@ -20,6 +20,7 @@ const STATUS_MAP = { 복용완료: "done", 건너뛰기: "skipped" };
 // 시간대 분류/정렬/다음 항목·놓침 판단은 서버가 이미 끝내서 내려줌
 const toOccurrence = (item) => ({
   key: item.supplement_schedule_seq,
+  logSeq: item.supplement_log_seq,
   name: item.name,
   time: item.scheduled_time.slice(0, 5),
   group: item.time_group,
@@ -54,6 +55,19 @@ function SupplementRecord() {
       handleAction(status);
     } catch {
       handleAction("체크에 실패했어요", "error");
+    }
+  };
+
+  // label은 취소하는 대상에 맞는 문구("복용취소" 또는 "건너뛰기 취소")를 그대로 받음
+  const cancel = async (supplementLogSeq, label) => {
+    setActiveOcc(null);
+
+    try {
+      await deleteSupplementLog(supplementLogSeq, getToken());
+      fetchToday();
+      handleAction(label);
+    } catch {
+      handleAction(`${label} 실패`, "error");
     }
   };
 
@@ -138,8 +152,16 @@ function SupplementRecord() {
         time={activeOcc?.time}
         status={activeOcc?.status}
         onClose={() => setActiveOcc(null)}
-        onDone={() => check(activeOcc.key, "복용완료")}
-        onSkip={() => check(activeOcc.key, "건너뛰기")}
+        onDone={() =>
+          activeOcc.status === "done"
+            ? cancel(activeOcc.logSeq, "복용취소")
+            : check(activeOcc.key, "복용완료")
+        }
+        onSkip={() =>
+          activeOcc.status === "skipped"
+            ? cancel(activeOcc.logSeq, "건너뛰기 취소")
+            : check(activeOcc.key, "건너뛰기")
+        }
       />
 
       <Toast show={showToast} message={message} variant={variant} />

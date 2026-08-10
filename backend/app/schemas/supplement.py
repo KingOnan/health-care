@@ -80,6 +80,7 @@ class SupplementCheckRequest(BaseModel):
 class SupplementTodayItemResponse(BaseModel):
     supplement_item_seq: int
     supplement_schedule_seq: int
+    supplement_log_seq: int | None  # None이면 아직 미확인(로그 없음). 체크 취소 시 이 값으로 삭제
     name: str
     scheduled_time: time
     time_group: str  # 아침/점심/저녁/밤

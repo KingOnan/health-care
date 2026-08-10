@@ -169,6 +169,21 @@ async def upsert_supplement_log(
     )
 
     if not upserted:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="영양제 스케줄을 찾을 수 없습니다.")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="영양제 일정을 찾을 수 없습니다.")
+
+    return ApiResponse()
+
+
+# 영양제 복용 체크 삭제
+@router.delete("/check/{supplement_log_seq}", response_model=ApiResponse[None])
+async def delete_supplement_log(
+    supplement_log_seq: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> ApiResponse[None]:
+    deleted = await supplement_service.delete_supplement_log(db, current_user.user_seq, supplement_log_seq)
+
+    if not deleted:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="영양제 기록을 찾을 수 없습니다.")
 
     return ApiResponse()
