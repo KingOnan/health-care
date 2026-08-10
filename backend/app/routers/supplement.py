@@ -158,17 +158,17 @@ async def get_supplement_item_today_list(
 
 # 영양제 복용 체크
 @router.post("/check/{supplement_schedule_seq}", response_model=ApiResponse[None])
-async def upsert_supplement_log(
+async def check_supplement_log(
     supplement_schedule_seq: int,
     data: SupplementCheckRequest,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ) -> ApiResponse[None]:
-    upserted = await supplement_service.upsert_supplement_log(
+    checked = await supplement_service.check_supplement_log(
         db, current_user.user_seq, supplement_schedule_seq, data.status
     )
 
-    if not upserted:
+    if not checked:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="영양제 일정을 찾을 수 없습니다.")
 
     return ApiResponse()

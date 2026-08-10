@@ -4,7 +4,7 @@ from fastapi import UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.concurrency import run_in_threadpool
 
-from app.kst import now_kst
+from app.kst import INTAKE_DAY_START_HOUR, now_kst
 from app.models.enums import CheckStatus, SupplementEatStatus
 from app.photo_storage import delete_photo, save_photo
 from app.repositories import supplement as supplement_repo
@@ -161,7 +161,6 @@ async def update_supplement_status(
 
 _GROUP_ORDER = ["아침", "점심", "저녁", "밤"]
 _GROUP_END = {"아침": time(10, 0), "점심": time(17, 0), "저녁": time(21, 0)}
-_DAY_START_HOUR = 5  # intake_today_kst()와 동일한 하루 시작 기준(새벽 5시)
 
 
 # 시간을 받아 아침/점심/저녁/밤 구분
@@ -179,7 +178,7 @@ def _time_group(scheduled_time: time) -> str:
 # 자정을 넘긴 시각(예: 02:00)도 이르게 취급되지 않고, 하루의 끝자락(04:59)에 가까운 값으로 계산됨
 def _minutes_since_day_start(t: time) -> int:
     total_minutes = t.hour * 60 + t.minute
-    return (total_minutes - _DAY_START_HOUR * 60) % (24 * 60)
+    return (total_minutes - INTAKE_DAY_START_HOUR * 60) % (24 * 60)
 
 
 # 이 시간대가 이미 지났는지 확인 ("밤"은 하루의 마지막 시간대라 끝나는 시각이 없어 항상 "안 지남" 처리)
@@ -245,7 +244,7 @@ async def get_supplement_item_today_list(
         key=lambda item: (
             False if all_done else group_all_done[item.time_group],  # 그룹이 전부 체크됐는가?
             group_order.index(item.time_group),
-            item.scheduled_time,  # 정확한 시각
+            _minutes_since_day_start(item.scheduled_time),  # 정확한 시각(자정을 걸치는 "밤"도 순서가 맞게)
         )
     )
 
@@ -259,18 +258,18 @@ async def get_supplement_item_today_list(
 
 
 # 영양제 복용 체크
-async def upsert_supplement_log(
+async def check_supplement_log(
     db: AsyncSession,
     user_seq: int,
     supplement_schedule_seq: int,
     status: CheckStatus,
 ) -> bool:
-    upserted = await supplement_repo.upsert_supplement_log(db, user_seq, supplement_schedule_seq, status)
+    checked = await supplement_repo.check_supplement_log(db, user_seq, supplement_schedule_seq, status)
 
-    if upserted:
+    if checked:
         await db.commit()
 
-    return upserted
+    return checked
 
 
 # 영양제 복용 체크 삭제

@@ -1,6 +1,6 @@
 from datetime import date, datetime, time
 
-from sqlalchemy import Date, DateTime, Enum, ForeignKey, Time, func
+from sqlalchemy import Date, DateTime, Enum, ForeignKey, Time, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -10,6 +10,10 @@ from app.models.enums import CheckStatus
 # 영양제 복용 기록 (날짜별)
 class SupplementLog(Base):
     __tablename__ = "supplement_logs"
+    # 같은 스케줄의 같은 날짜 기록은 하나만 존재해야 함 (동시 요청으로 중복 생성되는 것 방지)
+    __table_args__ = (
+        UniqueConstraint("supplement_schedule_seq", "log_date", name="uq_supplement_logs_schedule_log_date"),
+    )
 
     supplement_log_seq: Mapped[int] = mapped_column(
         primary_key=True, autoincrement=True, comment="영양제 복용 기록 기본키"

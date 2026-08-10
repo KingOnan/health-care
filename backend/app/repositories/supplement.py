@@ -300,13 +300,13 @@ async def get_supplement_item_today_list(
 
 
 # 영양제 복용 체크
-async def upsert_supplement_log(
+async def check_supplement_log(
     db: AsyncSession,
     user_seq: int,
     supplement_schedule_seq: int,
     status: CheckStatus,
 ) -> bool:
-    # 이 스케줄이 로그인한 유저 소유인지 확인
+    # 이 스케줄이 로그인한 유저 소유이면서 중지 상태가 아닌지 확인 (중지된 항목은 체크 대상이 아님)
     is_mine = await db.scalar(
         # fmt: off
         select(SupplementSchedule.supplement_schedule_seq)
@@ -314,6 +314,7 @@ async def upsert_supplement_log(
         .where(
             SupplementSchedule.supplement_schedule_seq == supplement_schedule_seq,
             SupplementItem.user_seq == user_seq,
+            SupplementItem.status != SupplementEatStatus.PAUSE,
         )
     )
 
