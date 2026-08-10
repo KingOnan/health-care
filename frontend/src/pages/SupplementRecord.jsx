@@ -8,11 +8,13 @@ import AddMenuButton from "../components/AddMenuButton";
 import IntakeItemBox from "../components/IntakeItemBox";
 import IntakeActionDialog from "../components/IntakeActionDialog";
 import GroupHeader from "../components/GroupHeader";
-import { getSupplementItemTodayList } from "../api/supplement";
+import Toast from "../components/Toast";
+import { checkSupplement, getSupplementItemTodayList } from "../api/supplement";
 import { getToken } from "../utils/user";
+import useToastNavigate from "../hooks/useToastNavigate";
 
-// 백엔드 CheckStatus 값을 화면이 쓰는 status 문자열로 변환
-const STATUS_MAP = { 미확인: "pending", 복용완료: "done", 건너뛰기: "skipped" };
+// 백엔드 CheckStatus 값을 화면이 쓰는 status 문자열로 변환 (null이면 아직 미확인)
+const STATUS_MAP = { 복용완료: "done", 건너뛰기: "skipped" };
 
 // 백엔드 응답(SupplementTodayItemResponse)을 화면이 쓰는 occurrence 모양으로 변환.
 // 시간대 분류/정렬/다음 항목·놓침 판단은 서버가 이미 끝내서 내려줌
@@ -21,7 +23,7 @@ const toOccurrence = (item) => ({
   name: item.name,
   time: item.scheduled_time.slice(0, 5),
   group: item.time_group,
-  status: STATUS_MAP[item.status],
+  status: item.status ? STATUS_MAP[item.status] : "pending",
   isNext: item.is_next,
   isMissed: item.is_missed,
 });
@@ -30,25 +32,29 @@ function SupplementRecord() {
   const navigate = useNavigate();
   const [occurrences, setOccurrences] = useState([]);
   const [activeOcc, setActiveOcc] = useState(null);
-  // 체크/취소 API(3-10, 3-11)가 아직 없어서, 탭한 항목의 상태만 화면에서 잠깐 바꿔 보여줌 (새로고침하면 서버 값으로 되돌아감)
-  const [statusOverride, setStatusOverride] = useState({});
+  const { showToast, message, variant, trigger: handleAction } = useToastNavigate({
+    message: "체크했어요",
+  });
 
-  useEffect(() => {
+  const fetchToday = () => {
     getSupplementItemTodayList(getToken())
       .then((data) => setOccurrences(data.map(toOccurrence)))
       .catch(() => {});
-  }, []);
+  };
 
-  const setStatus = (key, status) => {
-    setStatusOverride((prev) => {
-      const next = { ...prev };
-      if (prev[key] === status) {
-        delete next[key];
-      } else {
-        next[key] = status;
-      }
-      return next;
-    });
+  useEffect(fetchToday, []);
+
+  // status는 화면이 쓰는 값("done"/"skipped")이 아니라 백엔드 CheckStatus 값("복용완료"/"건너뛰기")을 받음
+  const check = async (supplementScheduleSeq, status) => {
+    setActiveOcc(null);
+
+    try {
+      await checkSupplement(supplementScheduleSeq, status, getToken());
+      fetchToday();
+      handleAction(status);
+    } catch {
+      handleAction("체크에 실패했어요", "error");
+    }
   };
 
   // occurrences는 서버가 이미 정렬해서 준 순서라, 그 순서 그대로 연속된 같은 그룹끼리만 묶음
@@ -93,9 +99,7 @@ function SupplementRecord() {
       />
 
       {visibleGroups.map(({ group, occurrences: groupOccurrences }, index) => {
-        const completedCount = groupOccurrences.filter(
-          (occ) => (statusOverride[occ.key] ?? occ.status) !== "pending",
-        ).length;
+        const completedCount = groupOccurrences.filter((occ) => occ.status !== "pending").length;
         return (
           <Fragment key={group}>
             {index > 0 && <div className="h-px bg-gray-200" />}
@@ -110,21 +114,18 @@ function SupplementRecord() {
                 totalCount={groupOccurrences.length}
               />
               <div className="flex flex-col gap-3">
-                {groupOccurrences.map((occ) => {
-                  const status = statusOverride[occ.key] ?? occ.status;
-                  return (
-                    <IntakeItemBox
-                      key={occ.key}
-                      name={occ.name}
-                      time={occ.time}
-                      status={status}
-                      isNext={occ.isNext}
-                      isMissed={occ.isMissed && status === "pending"}
-                      icon={PillBottle}
-                      onPress={() => setActiveOcc(occ)}
-                    />
-                  );
-                })}
+                {groupOccurrences.map((occ) => (
+                  <IntakeItemBox
+                    key={occ.key}
+                    name={occ.name}
+                    time={occ.time}
+                    status={occ.status}
+                    isNext={occ.isNext}
+                    isMissed={occ.isMissed}
+                    icon={PillBottle}
+                    onPress={() => setActiveOcc(occ)}
+                  />
+                ))}
               </div>
             </motion.section>
           </Fragment>
@@ -135,17 +136,13 @@ function SupplementRecord() {
         open={activeOcc !== null}
         name={activeOcc?.name}
         time={activeOcc?.time}
-        status={activeOcc && (statusOverride[activeOcc.key] ?? activeOcc.status)}
+        status={activeOcc?.status}
         onClose={() => setActiveOcc(null)}
-        onDone={() => {
-          setStatus(activeOcc.key, "done");
-          setActiveOcc(null);
-        }}
-        onSkip={() => {
-          setStatus(activeOcc.key, "skipped");
-          setActiveOcc(null);
-        }}
+        onDone={() => check(activeOcc.key, "복용완료")}
+        onSkip={() => check(activeOcc.key, "건너뛰기")}
       />
+
+      <Toast show={showToast} message={message} variant={variant} />
 
       <BottomNav active="supplement" />
     </div>

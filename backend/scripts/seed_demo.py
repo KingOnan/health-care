@@ -190,9 +190,13 @@ async def seed_demo() -> None:
             for day_offset in range(SAMPLE_DAYS):
                 log_date = today - timedelta(days=day_offset)
                 status = random.choices(
-                    [CheckStatus.DONE, CheckStatus.SKIPPED, CheckStatus.UNCHECKED],
+                    [CheckStatus.DONE, CheckStatus.SKIPPED, None],
                     weights=[85, 10, 5],
                 )[0]
+
+                if status is None:
+                    continue  # 미확인은 로그 행 자체를 만들지 않음
+
                 db.add(
                     SupplementLog(
                         supplement_schedule_seq=schedule.supplement_schedule_seq,
@@ -225,9 +229,13 @@ async def seed_demo() -> None:
             for day_offset in range(SAMPLE_DAYS):
                 log_date = today - timedelta(days=day_offset)
                 status = random.choices(
-                    [CheckStatus.DONE, CheckStatus.SKIPPED, CheckStatus.UNCHECKED],
+                    [CheckStatus.DONE, CheckStatus.SKIPPED, None],
                     weights=[85, 10, 5],
                 )[0]
+
+                if status is None:
+                    continue  # 미확인은 로그 행 자체를 만들지 않음
+
                 db.add(
                     MedicationLog(
                         medication_schedule_seq=medication_schedule.medication_schedule_seq,

@@ -27,8 +27,8 @@ class CheckTiming(str, enum.Enum):
     AFTER_2H = "식후 2시간"
 
 
-# 약, 영양제 하루 복용 체크 상태
+# 약, 영양제 하루 복용 체크 상태 (미확인은 값으로 두지 않음 — 로그 행이 없는 것 자체가 미확인이라,
+# 응답에서는 이 필드가 None으로 표현됨)
 class CheckStatus(str, enum.Enum):
-    UNCHECKED = "미확인"
     DONE = "복용완료"
     SKIPPED = "건너뛰기"

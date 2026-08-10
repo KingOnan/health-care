@@ -9,6 +9,7 @@ from app.database import get_db
 from app.models.user import User
 from app.schemas.common import ApiResponse
 from app.schemas.supplement import (
+    SupplementCheckRequest,
     SupplementItemCreate,
     SupplementItemListResponse,
     SupplementItemResponse,
@@ -153,3 +154,21 @@ async def get_supplement_item_today_list(
 ) -> ApiResponse[list[SupplementTodayItemResponse]]:
     items = await supplement_service.get_supplement_item_today_list(db, current_user.user_seq)
     return ApiResponse(data=items)
+
+
+# 영양제 복용 체크
+@router.post("/check/{supplement_schedule_seq}", response_model=ApiResponse[None])
+async def upsert_supplement_log(
+    supplement_schedule_seq: int,
+    data: SupplementCheckRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> ApiResponse[None]:
+    upserted = await supplement_service.upsert_supplement_log(
+        db, current_user.user_seq, supplement_schedule_seq, data.status
+    )
+
+    if not upserted:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="영양제 스케줄을 찾을 수 없습니다.")
+
+    return ApiResponse()

@@ -6,8 +6,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import load_only, selectinload
 
 from app.database import execute_and_get_rowcount
-from app.kst import today_kst
-from app.models.enums import SupplementEatStatus
+from app.kst import intake_today_kst, now_kst
+from app.models.enums import CheckStatus, SupplementEatStatus
 from app.models.supplement_item import SupplementItem
 from app.models.supplement_log import SupplementLog
 from app.models.supplement_schedule import SupplementSchedule
@@ -267,7 +267,7 @@ async def get_supplement_item_today_list(
     db: AsyncSession,
     user_seq: int,
 ) -> list[TodaySupplementRecord]:
-    today = today_kst()
+    today = intake_today_kst()
 
     result = await db.execute(
         # fmt: off
@@ -297,3 +297,54 @@ async def get_supplement_item_today_list(
         )
         for schedule, item, log in result.tuples()
     ]
+
+
+# 영양제 복용 체크
+async def upsert_supplement_log(
+    db: AsyncSession,
+    user_seq: int,
+    supplement_schedule_seq: int,
+    status: CheckStatus,
+) -> bool:
+    # 이 스케줄이 로그인한 유저 소유인지 확인
+    is_mine = await db.scalar(
+        # fmt: off
+        select(SupplementSchedule.supplement_schedule_seq)
+        .join(SupplementItem, SupplementSchedule.supplement_item_seq == SupplementItem.supplement_item_seq)
+        .where(
+            SupplementSchedule.supplement_schedule_seq == supplement_schedule_seq,
+            SupplementItem.user_seq == user_seq,
+        )
+    )
+
+    if is_mine is None:
+        return False
+
+    today = intake_today_kst()
+
+    # supplement_schedule_seq + log_date로 조회
+    existing = await db.scalar(
+        # fmt: off
+        select(SupplementLog)
+        .where(
+            SupplementLog.supplement_schedule_seq == supplement_schedule_seq,
+            SupplementLog.log_date == today,
+        )
+    )
+
+    if existing is None:
+        # 존재하지 않으면 insert
+        db.add(
+            SupplementLog(
+                supplement_schedule_seq=supplement_schedule_seq,
+                log_date=today,
+                status=status,
+                actual_time=now_kst().time(),
+            )
+        )
+    else:
+        # 존재하면 update
+        existing.status = status
+        existing.actual_time = now_kst().time()
+
+    return True

@@ -71,6 +71,11 @@ class SupplementStatusUpdate(BaseModel):
     status: SupplementEatStatus
 
 
+# 영양제 복용 체크
+class SupplementCheckRequest(BaseModel):
+    status: CheckStatus
+
+
 # 영양제 오늘 복용 항목 목록 조회 응답
 class SupplementTodayItemResponse(BaseModel):
     supplement_item_seq: int
@@ -78,6 +83,6 @@ class SupplementTodayItemResponse(BaseModel):
     name: str
     scheduled_time: time
     time_group: str  # 아침/점심/저녁/밤
-    status: CheckStatus  # 미확인/복용완료/건너뛰기
+    status: CheckStatus | None  # None이면 아직 미확인
     is_next: bool
     is_missed: bool  # 이미 지난 시간대인데 아직 미확인인 경우

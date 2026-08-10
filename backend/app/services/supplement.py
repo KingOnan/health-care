@@ -161,6 +161,7 @@ async def update_supplement_status(
 
 _GROUP_ORDER = ["아침", "점심", "저녁", "밤"]
 _GROUP_END = {"아침": time(10, 0), "점심": time(17, 0), "저녁": time(21, 0)}
+_DAY_START_HOUR = 5  # intake_today_kst()와 동일한 하루 시작 기준(새벽 5시)
 
 
 # 시간을 받아 아침/점심/저녁/밤 구분
@@ -174,12 +175,19 @@ def _time_group(scheduled_time: time) -> str:
     return "밤"  # 21:00 ~ 04:59
 
 
-# 이 시간대가 이미 지났는지 확인("밤"은 자정을 걸쳐서 끝나는 시각이 하나로 안 정해지므로 항상 "안 지남" 처리)
+# 새벽 5시를 하루의 시작으로 보고, "하루가 시작된 후 몇 분이 지났는지"로 환산.
+# 자정을 넘긴 시각(예: 02:00)도 이르게 취급되지 않고, 하루의 끝자락(04:59)에 가까운 값으로 계산됨
+def _minutes_since_day_start(t: time) -> int:
+    total_minutes = t.hour * 60 + t.minute
+    return (total_minutes - _DAY_START_HOUR * 60) % (24 * 60)
+
+
+# 이 시간대가 이미 지났는지 확인 ("밤"은 하루의 마지막 시간대라 끝나는 시각이 없어 항상 "안 지남" 처리)
 def _is_group_passed(group: str, now: time) -> bool:
     end = _GROUP_END.get(group)  # "밤"은 여기 없어서 None
     if end is None:
         return False
-    return now >= end
+    return _minutes_since_day_start(now) >= _minutes_since_day_start(end)
 
 
 # 오늘 복용 항목 목록 조회
@@ -190,7 +198,8 @@ async def get_supplement_item_today_list(
 
     # 1. records(레파지토리가 준 원본 데이터)를 하나씩 돌면서, 각각 시간대 분류·상태·놓침 여부를 계산해서
     #    SupplementTodayItemResponse로 만들고 result에 쌓음 (is_next는 일단 False)
-    # 2. result를 "지났는지 → 시간대 순서 → 정확한 시각" 순으로 정렬 — 지난 시간대는 뒤로, 나머지는 아침→점심→저녁→밤 순
+    # 2. result를 "지났는지 → 그룹 전부 체크됐는지 → 시간대 순서 → 정확한 시각" 순으로 정렬
+    #    — 지난 시간대는 뒤로, 전부 체크된 그룹은 더 뒤로, 나머지는 아침→점심→저녁→밤 순
     # 3. 정렬된 result를 앞에서부터 훑다가, 안 지났고 미확인인 첫 항목에만 is_next = True 찍고 멈춤
 
     records = await supplement_repo.get_supplement_item_today_list(db, user_seq)
@@ -199,7 +208,7 @@ async def get_supplement_item_today_list(
     result = []
     for r in records:
         time_group = _time_group(r.schedule.scheduled_time)  # 아침/점심/저녁/밤
-        item_status = r.log.status if r.log is not None else CheckStatus.UNCHECKED
+        item_status = r.log.status if r.log is not None else None
         passed = _is_group_passed(time_group, now)  # 시간대가 지났는가?
         result.append(
             SupplementTodayItemResponse(
@@ -210,14 +219,21 @@ async def get_supplement_item_today_list(
                 time_group=time_group,
                 status=item_status,
                 is_next=False,
-                is_missed=passed and item_status == CheckStatus.UNCHECKED,
+                is_missed=passed and item_status is None,
             )
         )
 
-    # 지난 시간대는 뒤로, 그 안에서는 아침→점심→저녁→밤 순, 같은 그룹 안에서는 이른 시각 순
+    # 그룹(아침/점심/저녁/밤) 안의 항목이 전부 체크(미확인 없음)됐는지 미리 계산
+    group_all_done = {
+        group: all(item.status is not None for item in result if item.time_group == group) for group in _GROUP_ORDER
+    }
+
+    # 지난 시간대는 뒤로, 그 안에서는 전부 체크된 그룹은 더 뒤로, 나머지는 아침→점심→저녁→밤 순,
+    # 같은 그룹 안에서는 이른 시각 순
     result.sort(
         key=lambda item: (
             _is_group_passed(item.time_group, now),  # 시간대가 지났는가?
+            group_all_done[item.time_group],  # 그룹이 전부 체크됐는가?
             _GROUP_ORDER.index(item.time_group),  # 그룹 순서
             item.scheduled_time,  # 정확한 시각
         )
@@ -225,8 +241,23 @@ async def get_supplement_item_today_list(
 
     # 정렬된 순서대로 확인하다가 안 지났고 아직 미확인인 첫 항목 하나만 다음 항목으로 표시
     for item in result:
-        if not _is_group_passed(item.time_group, now) and item.status == CheckStatus.UNCHECKED:
+        if not _is_group_passed(item.time_group, now) and item.status is None:
             item.is_next = True
             break
 
     return result
+
+
+# 영양제 복용 체크
+async def upsert_supplement_log(
+    db: AsyncSession,
+    user_seq: int,
+    supplement_schedule_seq: int,
+    status: CheckStatus,
+) -> bool:
+    upserted = await supplement_repo.upsert_supplement_log(db, user_seq, supplement_schedule_seq, status)
+
+    if upserted:
+        await db.commit()
+
+    return upserted
