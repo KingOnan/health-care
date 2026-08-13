@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from app.config.settings import settings
-from app.routers import supplement, user
+from app.routers import medication, supplement, user
 from app.schemas.common import ApiResponse
 
 logger = logging.getLogger(__name__)
@@ -24,6 +24,7 @@ app.add_middleware(
 
 app.include_router(user.router)
 app.include_router(supplement.router)
+app.include_router(medication.router)
 
 
 # 라우터에서 명시적으로 던진 HTTPException(404/422 등)을 공통 응답 봉투 형태로 변환

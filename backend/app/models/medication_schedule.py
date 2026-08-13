@@ -14,6 +14,7 @@ class MedicationSchedule(Base):
         primary_key=True, autoincrement=True, comment="약 스케줄 기본키"
     )
     medication_item_seq: Mapped[int] = mapped_column(
-        ForeignKey("medication_items.medication_item_seq"), comment="약 기본키(외래키)"
+        ForeignKey("medication_items.medication_item_seq", ondelete="CASCADE"),
+        comment="약 기본키(외래키). 항목이 삭제되면 딸린 스케줄도 함께 삭제됨",
     )
     scheduled_time: Mapped[time] = mapped_column(Time, comment="복용 시간")
