@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import {
   Pill,
   Pencil,
@@ -15,9 +16,10 @@ import {
 import { useNavigate, useParams } from "react-router-dom";
 import BottomNav from "../components/BottomNav";
 import Button from "../components/Button";
-import { INITIAL_ITEMS } from "../data/medicationItems";
+import { getMedicationItem, getMedicationItemPhotoUrl } from "../api/medication";
+import { getToken } from "../utils/user";
 
-// "08:00" -> 오전은 주황, 오후는 파랑으로 강조하고, 시간표처럼 행 사이에 구분선을 넣어 보여줌
+// "08:00:00" -> 오전은 주황, 오후는 파랑으로 강조하고, 시간표처럼 행 사이에 구분선을 넣어 보여줌
 const formatScheduledTime = (time, key, isFirst, isLast) => {
   const hour = Number(time.slice(0, 2));
   const isAm = hour < 12;
@@ -51,41 +53,58 @@ const ROW_ICONS = {
 function MedicationDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const item = INITIAL_ITEMS.find((i) => i.id === Number(id));
+  const [item, setItem] = useState(null);
+  const [photoUrl, setPhotoUrl] = useState(null);
+
+  useEffect(() => {
+    getMedicationItem(id, getToken())
+      .then(setItem)
+      .catch(() => {});
+  }, [id]);
+
+  useEffect(() => {
+    if (!item?.photo_path) return;
+
+    let objectUrl = null;
+    getMedicationItemPhotoUrl(id, getToken())
+      .then((url) => {
+        objectUrl = url;
+        setPhotoUrl(url);
+      })
+      .catch(() => {});
+
+    // Blob URL은 브라우저 메모리에 남아있어서 화면을 벗어나면 직접 해제해줘야 함
+    return () => {
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [id, item?.photo_path]);
 
   if (!item) return null;
 
+  // 처방약은 제품명·회사명·함량 정보를 아예 두지 않아서(등록 화면에서도 입력란이 숨겨짐) 그 행들을 건너뜀
   const rows = [
     ["명칭", item.name],
-    ["구분", item.isPrescription ? "병원 처방약" : "일반의약품"],
-    ...(item.isPrescription
+    ["구분", item.is_prescription ? "병원 처방약" : "일반의약품"],
+    ...(item.is_prescription
       ? []
       : [
-          ["제품명", item.productName ?? "노바스크정 5mg"],
-          ["회사명", item.companyName ?? "한국화이자제약"],
-          [
-            "함량/영양정보",
-            item.nutritionInfo ?? "암로디핀베실산염 5mg",
-          ],
+          ["제품명", item.product_name],
+          ["회사명", item.company_name],
+          ["함량/영양정보", item.nutrition_info],
         ]),
     [
       "예정 시각",
-      item.times?.map((t, i, arr) =>
-        formatScheduledTime(t, i, i === 0, i === arr.length - 1),
+      item.schedules.map((schedule, i, arr) =>
+        formatScheduledTime(schedule.scheduled_time, schedule.medication_schedule_seq, i === 0, i === arr.length - 1),
       ),
     ],
-    ["복용 방법", item.timing ?? "식후"],
-    ["복용 상태", item.paused ? "중지" : "복용 중"],
-    [
-      "설명",
-      item.description ?? "고혈압 치료에 사용되는 칼슘채널차단제예요.",
-    ],
+    ["복용 방법", item.timing],
+    ["복용 상태", item.status],
+    ["설명", item.description],
   ];
 
   return (
-    <div
-      className="theme-medication flex min-h-svh flex-col bg-page-bg"
-    >
+    <div className="theme-medication flex min-h-svh flex-col bg-page-bg">
       <header className="fixed inset-x-0 top-0 z-10 mx-auto flex w-full max-w-[480px] items-center justify-between border-b-2 border-gray-200 bg-surface px-6 py-4">
         <div className="flex items-center gap-3">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary text-white">
@@ -101,7 +120,7 @@ function MedicationDetail() {
           bg="bg-surface"
           text="text-primary"
           className="border-2 border-primary"
-          onClick={() => navigate(`/medication/manage/${item.id}`)}
+          onClick={() => navigate(`/medication/manage/${item.medication_item_seq}`)}
         >
           <Pencil size={18} />
           수정하기
@@ -110,9 +129,9 @@ function MedicationDetail() {
 
       <div className="flex flex-col divide-y-[6px] divide-white pb-26 pt-[100px]">
         <div className="px-6 pb-6">
-          {item.photoUrl ? (
+          {photoUrl ? (
             <img
-              src={item.photoUrl}
+              src={photoUrl}
               alt=""
               className="h-48 w-full rounded-xl object-cover"
             />

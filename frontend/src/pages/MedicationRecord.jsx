@@ -1,4 +1,4 @@
-import { useState, Fragment } from "react";
+import { useEffect, useState, Fragment } from "react";
 import { motion } from "framer-motion";
 import { Pill, List, Bot } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -8,73 +8,96 @@ import AddMenuButton from "../components/AddMenuButton";
 import IntakeItemBox from "../components/IntakeItemBox";
 import IntakeActionDialog from "../components/IntakeActionDialog";
 import GroupHeader from "../components/GroupHeader";
-import { INITIAL_ITEMS } from "../data/medicationItems";
-import { getTimeGroup, getCurrentTimeGroup } from "../utils/timeGroup";
+import EmptyState from "../components/EmptyState";
+import Toast from "../components/Toast";
+import {
+  checkMedication,
+  deleteMedicationLog,
+  getMedicationItemTodayList,
+} from "../api/medication";
+import { getToken } from "../utils/user";
+import useToastNavigate from "../hooks/useToastNavigate";
 
-const GROUP_ORDER = ["아침", "점심", "저녁", "밤"];
-const currentGroupIndex = GROUP_ORDER.indexOf(getCurrentTimeGroup());
-const isPastGroup = (group) => GROUP_ORDER.indexOf(group) < currentGroupIndex;
+// 백엔드 CheckStatus 값을 화면이 쓰는 status 문자열로 변환 (null이면 아직 미확인)
+const STATUS_MAP = { 복용완료: "done", 건너뛰기: "skipped" };
+
+// 백엔드 응답(MedicationTodayItemResponse)을 화면이 쓰는 occurrence 모양으로 변환.
+// 시간대 분류/정렬/다음 항목·놓침 판단은 서버가 이미 끝내서 내려줌
+const toOccurrence = (item) => ({
+  key: item.medication_schedule_seq,
+  logSeq: item.medication_log_seq,
+  name: item.name,
+  time: item.scheduled_time.slice(0, 5),
+  group: item.time_group,
+  status: item.status ? STATUS_MAP[item.status] : "pending",
+  isNext: item.is_next,
+  isMissed: item.is_missed,
+});
 
 function MedicationRecord() {
   const navigate = useNavigate();
-  const [statusByKey, setStatusByKey] = useState({});
+  const [occurrences, setOccurrences] = useState([]);
   const [activeOcc, setActiveOcc] = useState(null);
-
-  const activeItems = INITIAL_ITEMS.filter((item) => !item.paused);
-
-  const occurrences = activeItems
-    .flatMap((item) =>
-      item.times.map((time) => ({
-        key: `${item.id}-${time}`,
-        name: item.name,
-        time,
-        group: getTimeGroup(time),
-      })),
-    )
-    .sort((a, b) => a.time.localeCompare(b.time));
-
-  const setStatus = (key, status) => {
-    setStatusByKey((prev) => {
-      const next = { ...prev };
-      if (prev[key] === status) {
-        delete next[key];
-      } else {
-        next[key] = status;
-      }
-      return next;
-    });
-  };
-
-  const nextKey = occurrences.find(
-    (occ) => !statusByKey[occ.key] && !isPastGroup(occ.group),
-  )?.key;
-
-  const isGroupComplete = (group) => {
-    const items = occurrences.filter((occ) => occ.group === group);
-    return items.length > 0 && items.every((occ) => statusByKey[occ.key]);
-  };
-
-  const sortedGroups = [...GROUP_ORDER].sort((a, b) => {
-    const aPast = isPastGroup(a);
-    const bPast = isPastGroup(b);
-    if (aPast !== bPast) return aPast ? 1 : -1;
-    if (aPast && bPast) return 0;
-
-    const aDone = isGroupComplete(a);
-    const bDone = isGroupComplete(b);
-    return aDone === bDone ? 0 : aDone ? 1 : -1;
+  const {
+    showToast,
+    message,
+    variant,
+    trigger: handleAction,
+  } = useToastNavigate({
+    message: "체크했어요",
   });
 
-  const visibleGroups = sortedGroups
-    .map((group) => ({
-      group,
-      occurrences: occurrences.filter((occ) => occ.group === group),
-    }))
-    .filter(({ occurrences }) => occurrences.length > 0);
+  const fetchToday = () => {
+    getMedicationItemTodayList(getToken())
+      .then((data) => setOccurrences(data.map(toOccurrence)))
+      .catch(() => {});
+  };
+
+  useEffect(fetchToday, []);
+
+  // status는 화면이 쓰는 값("done"/"skipped")이 아니라 백엔드 CheckStatus 값("복용완료"/"건너뛰기")을 받음
+  const check = async (medicationScheduleSeq, status) => {
+    setActiveOcc(null);
+
+    try {
+      await checkMedication(medicationScheduleSeq, status, getToken());
+      fetchToday();
+      handleAction(status);
+    } catch {
+      handleAction("체크에 실패했어요", "error");
+    }
+  };
+
+  // label은 취소하는 대상에 맞는 문구("복용취소" 또는 "건너뛰기 취소")를 그대로 받음
+  const cancel = async (medicationLogSeq, label) => {
+    setActiveOcc(null);
+
+    try {
+      await deleteMedicationLog(medicationLogSeq, getToken());
+      fetchToday();
+      handleAction(label);
+    } catch {
+      handleAction(`${label} 실패`, "error");
+    }
+  };
+
+  // occurrences는 서버가 이미 정렬해서 준 순서라, 그 순서 그대로 연속된 같은 그룹끼리만 묶음
+  // (고정된 아침→점심→저녁→밤 순으로 다시 나누면 "지난 시간대는 뒤로"가 무시돼버림)
+  const visibleGroups = [];
+  for (const occ of occurrences) {
+    const lastGroup = visibleGroups[visibleGroups.length - 1];
+    if (lastGroup && lastGroup.group === occ.group) {
+      lastGroup.occurrences.push(occ);
+    } else {
+      visibleGroups.push({ group: occ.group, occurrences: [occ] });
+    }
+  }
 
   return (
     <div
-      className="theme-medication flex flex-col gap-8 px-3 pt-22 pb-26"
+      className={`theme-medication flex flex-col gap-8 pt-22 pb-26 ${
+        occurrences.length === 0 ? "px-6" : "px-3"
+      }`}
     >
       <TopTabs
         active="record"
@@ -103,9 +126,19 @@ function MedicationRecord() {
         }
       />
 
+      {occurrences.length === 0 && (
+        <EmptyState
+          icon={Pill}
+          message="등록된 약이 없어요"
+          subMessage="추가하면 목록에 나타나요"
+          actionLabel="약 추가하기"
+          onAction={() => navigate("/medication/manage")}
+        />
+      )}
+
       {visibleGroups.map(({ group, occurrences: groupOccurrences }, index) => {
         const completedCount = groupOccurrences.filter(
-          (occ) => statusByKey[occ.key],
+          (occ) => occ.status !== "pending",
         ).length;
         return (
           <Fragment key={group}>
@@ -127,9 +160,9 @@ function MedicationRecord() {
                     key={occ.key}
                     name={occ.name}
                     time={occ.time}
-                    status={statusByKey[occ.key] ?? "pending"}
-                    isNext={occ.key === nextKey}
-                    isMissed={isPastGroup(occ.group) && !statusByKey[occ.key]}
+                    status={occ.status}
+                    isNext={occ.isNext}
+                    isMissed={occ.isMissed}
                     icon={Pill}
                     onPress={() => setActiveOcc(occ)}
                   />
@@ -144,17 +177,21 @@ function MedicationRecord() {
         open={activeOcc !== null}
         name={activeOcc?.name}
         time={activeOcc?.time}
-        status={activeOcc && statusByKey[activeOcc.key]}
+        status={activeOcc?.status}
         onClose={() => setActiveOcc(null)}
-        onDone={() => {
-          setStatus(activeOcc.key, "done");
-          setActiveOcc(null);
-        }}
-        onSkip={() => {
-          setStatus(activeOcc.key, "skipped");
-          setActiveOcc(null);
-        }}
+        onDone={() =>
+          activeOcc.status === "done"
+            ? cancel(activeOcc.logSeq, "복용취소")
+            : check(activeOcc.key, "복용완료")
+        }
+        onSkip={() =>
+          activeOcc.status === "skipped"
+            ? cancel(activeOcc.logSeq, "건너뛰기 취소")
+            : check(activeOcc.key, "건너뛰기")
+        }
       />
+
+      <Toast show={showToast} message={message} variant={variant} />
 
       <BottomNav active="medication" />
     </div>

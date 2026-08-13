@@ -8,8 +8,13 @@ import AddMenuButton from "../components/AddMenuButton";
 import IntakeItemBox from "../components/IntakeItemBox";
 import IntakeActionDialog from "../components/IntakeActionDialog";
 import GroupHeader from "../components/GroupHeader";
+import EmptyState from "../components/EmptyState";
 import Toast from "../components/Toast";
-import { checkSupplement, deleteSupplementLog, getSupplementItemTodayList } from "../api/supplement";
+import {
+  checkSupplement,
+  deleteSupplementLog,
+  getSupplementItemTodayList,
+} from "../api/supplement";
 import { getToken } from "../utils/user";
 import useToastNavigate from "../hooks/useToastNavigate";
 
@@ -33,7 +38,12 @@ function SupplementRecord() {
   const navigate = useNavigate();
   const [occurrences, setOccurrences] = useState([]);
   const [activeOcc, setActiveOcc] = useState(null);
-  const { showToast, message, variant, trigger: handleAction } = useToastNavigate({
+  const {
+    showToast,
+    message,
+    variant,
+    trigger: handleAction,
+  } = useToastNavigate({
     message: "체크했어요",
   });
 
@@ -84,7 +94,11 @@ function SupplementRecord() {
   }
 
   return (
-    <div className="theme-supplement flex flex-col gap-8 px-3 pt-22 pb-26">
+    <div
+      className={`theme-supplement flex flex-col gap-8 pt-22 pb-26 ${
+        occurrences.length === 0 ? "px-6" : "px-3"
+      }`}
+    >
       <TopTabs
         active="record"
         basePath="/supplement"
@@ -112,8 +126,20 @@ function SupplementRecord() {
         }
       />
 
+      {occurrences.length === 0 && (
+        <EmptyState
+          icon={PillBottle}
+          message="등록된 영양제가 없어요"
+          subMessage="추가하면 목록에 나타나요"
+          actionLabel="영양제 추가하기"
+          onAction={() => navigate("/supplement/manage")}
+        />
+      )}
+
       {visibleGroups.map(({ group, occurrences: groupOccurrences }, index) => {
-        const completedCount = groupOccurrences.filter((occ) => occ.status !== "pending").length;
+        const completedCount = groupOccurrences.filter(
+          (occ) => occ.status !== "pending",
+        ).length;
         return (
           <Fragment key={group}>
             {index > 0 && <div className="h-px bg-gray-200" />}

@@ -10,9 +10,14 @@ import {
   Clock,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { deleteSupplement, getSupplementItemList, updateSupplementStatus } from "../api/supplement";
+import {
+  deleteSupplement,
+  getSupplementItemList,
+  updateSupplementStatus,
+} from "../api/supplement";
 import { getToken } from "../utils/user";
 import Toast from "../components/Toast";
+import EmptyState from "../components/EmptyState";
 import ConfirmDialog from "../components/ConfirmDialog";
 import BottomNav from "../components/BottomNav";
 import useToastNavigate from "../hooks/useToastNavigate";
@@ -33,7 +38,12 @@ function SupplementList() {
   const [pendingPauseId, setPendingPauseId] = useState(null);
   const pendingDeleteItem = items.find((item) => item.id === pendingDeleteId);
   const pendingPauseItem = items.find((item) => item.id === pendingPauseId);
-  const { showToast, message, variant, trigger: handleAction } = useToastNavigate({
+  const {
+    showToast,
+    message,
+    variant,
+    trigger: handleAction,
+  } = useToastNavigate({
     message: "삭제했어요",
   });
 
@@ -49,13 +59,22 @@ function SupplementList() {
     setPendingPauseId(null);
 
     try {
-      await updateSupplementStatus(id, wasPaused ? "복용중" : "중지", getToken());
+      await updateSupplementStatus(
+        id,
+        wasPaused ? "복용중" : "중지",
+        getToken(),
+      );
       setItems((prev) =>
-        prev.map((item) => (item.id === id ? { ...item, paused: !item.paused } : item)),
+        prev.map((item) =>
+          item.id === id ? { ...item, paused: !item.paused } : item,
+        ),
       );
       handleAction(wasPaused ? "재개했어요" : "중지했어요");
     } catch {
-      handleAction(wasPaused ? "재개에 실패했어요" : "중지에 실패했어요", "error");
+      handleAction(
+        wasPaused ? "재개에 실패했어요" : "중지에 실패했어요",
+        "error",
+      );
     }
   };
 
@@ -82,6 +101,16 @@ function SupplementList() {
       </header>
 
       <div className="flex flex-col gap-7 p-6 pt-[100px] pb-26">
+        {items.length === 0 && (
+          <EmptyState
+            icon={PillBottle}
+            message="등록된 영양제가 없어요"
+            subMessage="추가하면 목록에 나타나요"
+            actionLabel="영양제 추가하기"
+            onAction={() => navigate("/supplement/manage")}
+          />
+        )}
+
         {items.map((item) => (
           <div
             key={item.id}
@@ -96,11 +125,19 @@ function SupplementList() {
             >
               <div className="flex flex-col gap-1">
                 <span className="flex items-center gap-1.5 text-lg font-extrabold text-text">
-                  <Tag size={18} strokeWidth={3} className="shrink-0 text-primary" />
+                  <Tag
+                    size={18}
+                    strokeWidth={3}
+                    className="shrink-0 text-primary"
+                  />
                   {item.name}
                 </span>
                 <span className="flex items-center gap-1.5 text-lg text-text-muted">
-                  <Clock size={18} strokeWidth={3} className="shrink-0 text-primary" />
+                  <Clock
+                    size={18}
+                    strokeWidth={3}
+                    className="shrink-0 text-primary"
+                  />
                   {item.times.join(", ")}
                   {item.paused && " · 중지"}
                 </span>
