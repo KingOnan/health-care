@@ -1,6 +1,6 @@
 from datetime import datetime, time
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.models.enums import CheckStatus, EatTiming, SupplementEatStatus
 
@@ -14,7 +14,7 @@ class SupplementItemCreate(BaseModel):
     company_name: str | None = None
     nutrition_info: str | None = None
     description: str | None = None
-    scheduled_times: list[time]
+    scheduled_times: list[time] = Field(min_length=1)
 
 
 # 수정 요청에서 스케줄 하나를 표현. supplement_schedule_seq가 있으면 기존 스케줄의 시각 변경,
@@ -34,7 +34,7 @@ class SupplementItemUpdate(BaseModel):
     company_name: str | None = None
     nutrition_info: str | None = None
     description: str | None = None
-    schedules: list[SupplementScheduleUpdate]
+    schedules: list[SupplementScheduleUpdate] = Field(min_length=1)
 
 
 # 상세 응답에서 스케줄 하나를 표현. 수정 요청 시 그대로 되돌려 보낼 수 있도록 ID를 포함
