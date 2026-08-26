@@ -11,9 +11,13 @@ class Settings(BaseSettings):
     # 타임존 (날짜 판정은 항상 KST 고정)
     timezone: str
 
-    # 혈압 정상 기준 (mmHg)
+    # 혈압 판정 기준 (mmHg) — 저혈압 경계 / 정상 상한 / 주의 상한
+    blood_pressure_systolic_low_boundary: int
+    blood_pressure_diastolic_low_boundary: int
     blood_pressure_systolic_normal_max: int
     blood_pressure_diastolic_normal_max: int
+    blood_pressure_systolic_caution_max: int
+    blood_pressure_diastolic_caution_max: int
 
     # 혈당 정상 기준 (mg/dL)
     blood_sugar_fasting_normal_max: int

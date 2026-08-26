@@ -1,5 +1,5 @@
-from app.models.blood_pressure_record import BloodPressureRecord
-from app.models.blood_sugar_record import BloodSugarRecord
+from app.models.blood_pressure import BloodPressure
+from app.models.blood_sugar import BloodSugar
 from app.models.medication_item import MedicationItem
 from app.models.medication_log import MedicationLog
 from app.models.medication_schedule import MedicationSchedule
@@ -16,6 +16,6 @@ __all__ = [
     "SupplementItem",
     "SupplementSchedule",
     "SupplementLog",
-    "BloodPressureRecord",
-    "BloodSugarRecord",
+    "BloodPressure",
+    "BloodSugar",
 ]

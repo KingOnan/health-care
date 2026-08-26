@@ -32,3 +32,11 @@ class CheckTiming(str, enum.Enum):
 class CheckStatus(str, enum.Enum):
     DONE = "복용완료"
     SKIPPED = "건너뛰기"
+
+
+# 혈압 4단계 판정 결과
+class BloodPressureLevel(str, enum.Enum):
+    LOW = "저혈압"
+    NORMAL = "정상"
+    CAUTION = "주의"
+    HIGH = "고혈압"
