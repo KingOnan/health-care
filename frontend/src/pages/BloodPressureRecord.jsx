@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { HeartPulse, ClipboardList, Bot } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import TopTabs from "../components/TopTabs";
@@ -8,12 +8,11 @@ import MonthSelector from "../components/MonthSelector";
 import StatusLegend from "../components/StatusLegend";
 import RecordTable from "../components/RecordTable";
 import RowActionDialog from "../components/RowActionDialog";
-import ConfirmDialog from "../components/ConfirmDialog";
 import Toast from "../components/Toast";
-import useToastNavigate from "../hooks/useToastNavigate";
 import useBackToClose from "../hooks/useBackToClose";
-import { INITIAL_LOGS } from "../data/bloodPressureLogs";
-import { getBpStatus } from "../utils/bpStatus";
+import { getBloodPressureList } from "../api/bloodPressure";
+import { getToken } from "../utils/user";
+import { levelToStatus } from "../utils/bpStatus";
 import { STATUS_TEXT_CLASS } from "../utils/statusColor";
 
 const COLUMNS = [
@@ -33,32 +32,44 @@ const COLUMNS = [
   { key: "pulse", label: "맥박", width: "w-[4.2rem]" },
 ];
 
+// "2026-09-15T09:00:00" -> { date: "09/15", time: "09:00" }
+function splitMeasuredAt(measuredAt) {
+  const [datePart, timePart] = measuredAt.split("T");
+  const [, m, d] = datePart.split("-");
+  return { date: `${m}/${d}`, time: timePart.slice(0, 5) };
+}
+
 function BloodPressureRecord() {
   const navigate = useNavigate();
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1);
+  const [logs, setLogs] = useState([]);
   const [activeLog, setActiveLog] = useState(null);
-  const [dialogStep, setDialogStep] = useState("none"); // "none" | "action" | "confirm"
+  const [dialogStep, setDialogStep] = useState("none"); // "none" | "action"
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
   useBackToClose(dialogStep !== "none", () => setDialogStep("none"));
 
   const isCurrentMonth = year === now.getFullYear() && month === now.getMonth() + 1;
 
-  const monthLogs = INITIAL_LOGS.filter((log) => {
-    const [y, m] = log.date.split("-").map(Number);
-    return y === year && m === month;
-  }).sort((a, b) => (a.date + a.time < b.date + b.time ? 1 : -1));
+  useEffect(() => {
+    getBloodPressureList(year, month, getToken())
+      .then(setLogs)
+      .catch(() => setLogs([]));
+  }, [year, month]);
 
-  const rows = monthLogs.map((log) => {
-    const [, m, d] = log.date.split("-");
+  const rows = logs.map((log) => {
+    const { date, time } = splitMeasuredAt(log.measured_at);
     return {
-      id: log.id,
-      date: `${m}/${d}`,
-      time: log.time,
+      id: log.blood_pressure_seq,
+      date,
+      time,
       systolic: log.systolic,
       diastolic: log.diastolic,
       pulse: log.pulse,
-      status: getBpStatus(log.systolic, log.diastolic),
+      memo: log.memo,
+      status: levelToStatus(log.level),
     };
   });
 
@@ -81,14 +92,16 @@ function BloodPressureRecord() {
     }
   };
 
-  const { showToast, message, trigger: handleAction } = useToastNavigate({
-    message: "삭제했어요",
-  });
+  const notifyNotReady = () => {
+    setDialogStep("none");
+    setToastMessage("수정·삭제는 아직 준비 중이에요");
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 1500);
+  };
 
-  const [, activeMonth, activeDay] = activeLog?.date.split("-") ?? [];
-  const activeLogTitle = activeLog ? `${activeMonth}/${activeDay} ${activeLog.time}` : "";
+  const activeLogTitle = activeLog ? `${activeLog.date} ${activeLog.time}` : "";
   const activeStatusClass = activeLog
-    ? (STATUS_TEXT_CLASS[getBpStatus(activeLog.systolic, activeLog.diastolic)] ?? "text-text")
+    ? (STATUS_TEXT_CLASS[activeLog.status] ?? "text-text")
     : "text-text";
   const activeLogDetails = activeLog && (
     <div className="overflow-hidden rounded-xl border-2 border-primary">
@@ -158,7 +171,7 @@ function BloodPressureRecord() {
               rows={rows}
               columns={COLUMNS}
               onRowClick={(row) => {
-                setActiveLog(monthLogs.find((log) => log.id === row.id));
+                setActiveLog(row);
                 setDialogStep("action");
               }}
             />
@@ -178,24 +191,12 @@ function BloodPressureRecord() {
         title={activeLogTitle}
         details={activeLogDetails}
         memo={activeLog?.memo ?? ""}
-        onEdit={() => navigate(`/blood-pressure/manage/${activeLog.id}`)}
-        onDelete={() => setDialogStep("confirm")}
+        onEdit={notifyNotReady}
+        onDelete={notifyNotReady}
         onClose={() => setDialogStep("none")}
       />
 
-      <ConfirmDialog
-        open={dialogStep === "confirm"}
-        manageHistory={false}
-        title="이 기록을 삭제할까요?"
-        message="삭제하면 되돌릴 수 없어요."
-        onCancel={() => setDialogStep("none")}
-        onConfirm={() => {
-          setDialogStep("none");
-          handleAction();
-        }}
-      />
-
-      <Toast show={showToast} message={message} />
+      <Toast show={showToast} message={toastMessage} />
 
       <BottomNav active="bp" />
     </div>

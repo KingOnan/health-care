@@ -36,3 +36,16 @@ export function getBpStatus(systolic, diastolic) {
     ? systolicStatus
     : diastolicStatus;
 }
+
+// 서버가 계산해서 내려주는 level(저혈압/정상/주의/고혈압)을 화면에서 쓰는 status 키로 변환.
+// 서버 API가 아직 없는 화면(통계 탭 등)은 위 getBpStatus로 클라이언트에서 직접 계산하는 예전 방식을 그대로 씀.
+const LEVEL_TO_STATUS = {
+  저혈압: "low",
+  정상: "normal",
+  주의: "caution",
+  고혈압: "warning",
+};
+
+export function levelToStatus(level) {
+  return LEVEL_TO_STATUS[level] ?? "normal";
+}

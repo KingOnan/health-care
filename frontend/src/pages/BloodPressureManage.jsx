@@ -7,52 +7,74 @@ import {
   Check,
   FileText,
 } from "lucide-react";
-import { useParams } from "react-router-dom";
 import InputField from "../components/InputField";
 import Button from "../components/Button";
 import Toast from "../components/Toast";
 import BottomNav from "../components/BottomNav";
 import useToastNavigate from "../hooks/useToastNavigate";
-import { INITIAL_LOGS } from "../data/bloodPressureLogs";
+import { createBloodPressure } from "../api/bloodPressure";
+import { getToken } from "../utils/user";
+
+// "오전"/"오후" + 12시간제 시각을 24시간제 시(0~23)로 변환
+function to24Hour(period, hour12) {
+  const h = Number(hour12) % 12;
+  return period === "오후" ? h + 12 : h;
+}
 
 function BloodPressureManage() {
-  const { id } = useParams();
-  const isEditMode = id !== undefined;
-  const existingLog = isEditMode
-    ? INITIAL_LOGS.find((log) => log.id === Number(id))
-    : null;
-
   const now = new Date();
-  const defaultDate = now.toISOString().slice(0, 10);
-  const defaultTime = `${String(now.getHours()).padStart(2, "0")}:${String(
-    now.getMinutes(),
+  const defaultDate = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(
+    now.getDate(),
   ).padStart(2, "0")}`;
-  const initialTime = existingLog?.time ?? defaultTime;
-  const [initialHour, initialMinute] = initialTime.split(":");
-  const initialDate = existingLog?.date ?? defaultDate;
-  const [initialYear, initialMonth, initialDay] = initialDate.split("-");
+  const defaultHour24 = now.getHours();
+  const defaultPeriod = defaultHour24 >= 12 ? "오후" : "오전";
+  const defaultHour12 = defaultHour24 % 12 === 0 ? 12 : defaultHour24 % 12;
 
-  const [year, setYear] = useState(initialYear);
-  const [month, setMonth] = useState(initialMonth);
-  const [day, setDay] = useState(initialDay);
-  const [period, setPeriod] = useState(
-    Number(initialHour) >= 12 ? "오후" : "오전",
-  );
-  const [hour, setHour] = useState(initialHour);
-  const [minute, setMinute] = useState(initialMinute);
-  const [systolic, setSystolic] = useState(existingLog?.systolic ?? "");
-  const [diastolic, setDiastolic] = useState(existingLog?.diastolic ?? "");
-  const [pulse, setPulse] = useState(existingLog?.pulse ?? "");
-  const [memo, setMemo] = useState(existingLog?.memo ?? "");
+  const [year, month, day] = defaultDate.split("-");
+  const [yearInput, setYear] = useState(year);
+  const [monthInput, setMonth] = useState(month);
+  const [dayInput, setDay] = useState(day);
+  const [period, setPeriod] = useState(defaultPeriod);
+  const [hour, setHour] = useState(String(defaultHour12).padStart(2, "0"));
+  const [minute, setMinute] = useState(String(now.getMinutes()).padStart(2, "0"));
+  const [systolic, setSystolic] = useState("");
+  const [diastolic, setDiastolic] = useState("");
+  const [pulse, setPulse] = useState("");
+  const [memo, setMemo] = useState("");
 
   const {
     showToast,
     message,
+    variant,
     trigger: handleSave,
   } = useToastNavigate({
-    message: isEditMode ? "수정했어요" : "저장했어요",
+    message: "저장했어요",
     to: "/blood-pressure",
   });
+
+  const handleSubmit = async () => {
+    const hour24 = to24Hour(period, hour);
+    const measuredAt = `${yearInput}-${String(monthInput).padStart(2, "0")}-${String(dayInput).padStart(
+      2,
+      "0",
+    )}T${String(hour24).padStart(2, "0")}:${String(minute).padStart(2, "0")}:00`;
+
+    try {
+      await createBloodPressure(
+        {
+          measured_at: measuredAt,
+          systolic: Number(systolic),
+          diastolic: Number(diastolic),
+          pulse: Number(pulse),
+          memo: memo || null,
+        },
+        getToken(),
+      );
+      handleSave();
+    } catch {
+      handleSave("저장에 실패했어요", "error");
+    }
+  };
 
   return (
     <div
@@ -63,19 +85,17 @@ function BloodPressureManage() {
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary text-white">
             <HeartPulse size={22} />
           </div>
-          <h1 className="text-heading font-bold">
-            {isEditMode ? "혈압 수정" : "혈압 입력"}
-          </h1>
+          <h1 className="text-heading font-bold">혈압 입력</h1>
         </div>
         <Button
           py="py-1"
           px="px-6"
           shadow=""
           minH="min-h-11"
-          onClick={() => handleSave()}
+          onClick={handleSubmit}
         >
           <Save size={18} />
-          {isEditMode ? "수정하기" : "저장하기"}
+          저장하기
         </Button>
       </header>
 
@@ -89,19 +109,19 @@ function BloodPressureManage() {
             <InputField
               placeholder="년"
               type="number"
-              value={year}
+              value={yearInput}
               onChange={(e) => setYear(e.target.value)}
             />
             <InputField
               placeholder="월"
               type="number"
-              value={month}
+              value={monthInput}
               onChange={(e) => setMonth(e.target.value)}
             />
             <InputField
               placeholder="일"
               type="number"
-              value={day}
+              value={dayInput}
               onChange={(e) => setDay(e.target.value)}
             />
           </div>
@@ -188,7 +208,7 @@ function BloodPressureManage() {
         </div>
       </div>
 
-      <Toast show={showToast} message={message} />
+      <Toast show={showToast} message={message} variant={variant} />
 
       <BottomNav active="bp" />
     </div>
