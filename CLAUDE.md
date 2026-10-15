@@ -31,7 +31,7 @@
 - **RAG 벡터DB**: ChromaDB
 - **DB**: MySQL
 - **패키지 관리**: requirements.txt 또는 pyproject.toml + venv
-- **배포**: GitHub Actions(CI/CD) → Docker 이미지 빌드 → AWS EC2 (Nginx 리버스 프록시 + Docker 컨테이너)
+- **배포**: GitHub Actions(CI/CD) → Docker 이미지 빌드 → CVM(코드라운지) 서버 `2nan-01` — 득근대란·프로틴쇼와 같은 서버 (Nginx 리버스 프록시 + Docker 컨테이너)
 - **프론트엔드**: 반응형 웹 + PWA 설정 (네이티브 앱 아님, 별도 학습 대상 아님)
 
 ## 3. 아키텍처 원칙
