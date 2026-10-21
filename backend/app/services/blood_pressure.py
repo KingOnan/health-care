@@ -4,7 +4,7 @@ from app.config.settings import settings
 from app.models.blood_pressure import BloodPressure
 from app.models.enums import BloodPressureLevel
 from app.repositories import blood_pressure as blood_pressure_repo
-from app.schemas.blood_pressure import BloodPressureCreate, BloodPressureResponse
+from app.schemas.blood_pressure import BloodPressureCreate, BloodPressureResponse, BloodPressureUpdate
 
 
 # 혈압 기록 등록
@@ -38,6 +38,22 @@ async def get_blood_pressure(db: AsyncSession, user_seq: int, blood_pressure_seq
         return None
 
     return _to_response(item)
+
+
+# 혈압 단건 수정
+async def update_blood_pressure(
+    db: AsyncSession,
+    user_seq: int,
+    blood_pressure_seq: int,
+    data: BloodPressureUpdate,
+) -> int | None:
+    result = await blood_pressure_repo.update_blood_pressure(db, user_seq, blood_pressure_seq, data)
+
+    if not result:
+        return None
+
+    await db.commit()
+    return blood_pressure_seq
 
 
 def _classify_level(systolic: int, diastolic: int) -> BloodPressureLevel:

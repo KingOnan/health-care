@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.models.user import User
-from app.schemas.blood_pressure import BloodPressureCreate, BloodPressureResponse
+from app.schemas.blood_pressure import BloodPressureCreate, BloodPressureResponse, BloodPressureUpdate
 from app.schemas.common import ApiResponse
 from app.security import get_current_user
 from app.services import blood_pressure as blood_pressure_service
@@ -48,6 +48,22 @@ async def get_blood_pressure(
     current_user: User = Depends(get_current_user),
 ) -> ApiResponse[BloodPressureResponse]:
     result = await blood_pressure_service.get_blood_pressure(db, current_user.user_seq, blood_pressure_seq)
+
+    if result is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="혈압 기록을 찾을 수 없습니다.")
+
+    return ApiResponse(data=result)
+
+
+# 혈압 단건 수정
+@router.post("/update/{blood_pressure_seq}", response_model=ApiResponse[int])
+async def update_blood_pressure(
+    blood_pressure_seq: int,
+    data: BloodPressureUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> ApiResponse[int]:
+    result = await blood_pressure_service.update_blood_pressure(db, current_user.user_seq, blood_pressure_seq, data)
 
     if result is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="혈압 기록을 찾을 수 없습니다.")

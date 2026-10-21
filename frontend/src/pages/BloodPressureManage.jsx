@@ -13,7 +13,7 @@ import Button from "../components/Button";
 import Toast from "../components/Toast";
 import BottomNav from "../components/BottomNav";
 import useToastNavigate from "../hooks/useToastNavigate";
-import { createBloodPressure, getBloodPressure } from "../api/bloodPressure";
+import { createBloodPressure, getBloodPressure, updateBloodPressure } from "../api/bloodPressure";
 import { getToken } from "../utils/user";
 
 // "오전"/"오후" + 12시간제 시각을 24시간제 시(0~23)로 변환
@@ -88,32 +88,30 @@ function BloodPressureManage() {
   const handleSubmit = async () => {
     if (!isLoaded) return;
 
-    // 수정 API(5-7)가 아직 없어서 안내만 띄우고 화면에 머무름
-    if (isEditMode) {
-      handleSave("수정은 아직 준비 중이에요", "error");
-      return;
-    }
-
     const hour24 = to24Hour(period, hour);
     const measuredAt = `${yearInput}-${String(monthInput).padStart(2, "0")}-${String(dayInput).padStart(
       2,
       "0",
     )}T${String(hour24).padStart(2, "0")}:${String(minute).padStart(2, "0")}:00`;
 
+    const data = {
+      measured_at: measuredAt,
+      systolic: Number(systolic),
+      diastolic: Number(diastolic),
+      pulse: Number(pulse),
+      memo: memo || null,
+    };
+
     try {
-      await createBloodPressure(
-        {
-          measured_at: measuredAt,
-          systolic: Number(systolic),
-          diastolic: Number(diastolic),
-          pulse: Number(pulse),
-          memo: memo || null,
-        },
-        getToken(),
-      );
-      handleSave();
+      if (isEditMode) {
+        await updateBloodPressure(id, data, getToken());
+        handleSave("수정했어요");
+      } else {
+        await createBloodPressure(data, getToken());
+        handleSave();
+      }
     } catch {
-      handleSave("저장에 실패했어요", "error");
+      handleSave(isEditMode ? "수정에 실패했어요" : "저장에 실패했어요", "error");
     }
   };
 
