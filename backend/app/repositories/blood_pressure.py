@@ -53,3 +53,19 @@ async def get_blood_pressure_list(
     )
 
     return list(result.all())
+
+
+# 혈압 단건 상세 조회
+async def get_blood_pressure(
+    db: AsyncSession,
+    user_seq: int,
+    blood_pressure_seq: int,
+) -> BloodPressure | None:
+    return await db.scalar(
+        # fmt: off
+        select(BloodPressure)
+        .where(
+            BloodPressure.blood_pressure_seq == blood_pressure_seq,
+            BloodPressure.user_seq == user_seq,
+        )
+    )

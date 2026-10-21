@@ -94,7 +94,7 @@ function BloodPressureRecord() {
 
   const notifyNotReady = () => {
     setDialogStep("none");
-    setToastMessage("수정·삭제는 아직 준비 중이에요");
+    setToastMessage("삭제는 아직 준비 중이에요");
     setShowToast(true);
     setTimeout(() => setShowToast(false), 1500);
   };
@@ -191,7 +191,7 @@ function BloodPressureRecord() {
         title={activeLogTitle}
         details={activeLogDetails}
         memo={activeLog?.memo ?? ""}
-        onEdit={notifyNotReady}
+        onEdit={() => navigate(`/blood-pressure/manage/${activeLog.id}`)}
         onDelete={notifyNotReady}
         onClose={() => setDialogStep("none")}
       />

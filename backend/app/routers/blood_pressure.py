@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -38,3 +38,18 @@ async def get_blood_pressure_list(
     )
 
     return ApiResponse(data=items)
+
+
+# 혈압 단건 상세 조회
+@router.get("/{blood_pressure_seq}", response_model=ApiResponse[BloodPressureResponse])
+async def get_blood_pressure(
+    blood_pressure_seq: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> ApiResponse[BloodPressureResponse]:
+    result = await blood_pressure_service.get_blood_pressure(db, current_user.user_seq, blood_pressure_seq)
+
+    if result is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="혈압 기록을 찾을 수 없습니다.")
+
+    return ApiResponse(data=result)

@@ -32,3 +32,17 @@ export async function getBloodPressureList(year, month, token) {
   const { data } = await response.json();
   return data;
 }
+
+// 혈압 단건 상세 조회
+export async function getBloodPressure(bloodPressureSeq, token) {
+  const response = await fetch(`${API_BASE_URL}/blood-pressure/${bloodPressureSeq}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    throw new Error("혈압 상세 조회 실패");
+  }
+
+  const { data } = await response.json();
+  return data;
+}

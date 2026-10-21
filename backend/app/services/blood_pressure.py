@@ -1,6 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config.settings import settings
+from app.models.blood_pressure import BloodPressure
 from app.models.enums import BloodPressureLevel
 from app.repositories import blood_pressure as blood_pressure_repo
 from app.schemas.blood_pressure import BloodPressureCreate, BloodPressureResponse
@@ -26,19 +27,17 @@ async def get_blood_pressure_list(
 ) -> list[BloodPressureResponse]:
     items = await blood_pressure_repo.get_blood_pressure_list(db, user_seq, year, month)
 
-    return [
-        BloodPressureResponse(
-            blood_pressure_seq=item.blood_pressure_seq,
-            measured_at=item.measured_at,
-            systolic=item.systolic,
-            diastolic=item.diastolic,
-            pulse=item.pulse,
-            memo=item.memo,
-            level=_classify_level(item.systolic, item.diastolic),
-            created_at=item.created_at,
-        )
-        for item in items
-    ]
+    return [_to_response(item) for item in items]
+
+
+# 혈압 단건 상세 조회
+async def get_blood_pressure(db: AsyncSession, user_seq: int, blood_pressure_seq: int) -> BloodPressureResponse | None:
+    item = await blood_pressure_repo.get_blood_pressure(db, user_seq, blood_pressure_seq)
+
+    if item is None:
+        return None
+
+    return _to_response(item)
 
 
 def _classify_level(systolic: int, diastolic: int) -> BloodPressureLevel:
@@ -61,3 +60,17 @@ def _classify_level(systolic: int, diastolic: int) -> BloodPressureLevel:
         return BloodPressureLevel.CAUTION
 
     return BloodPressureLevel.NORMAL
+
+
+# ORM 모델 → 응답 스키마 변환 (판정 결과 level 포함)
+def _to_response(item: BloodPressure) -> BloodPressureResponse:
+    return BloodPressureResponse(
+        blood_pressure_seq=item.blood_pressure_seq,
+        measured_at=item.measured_at,
+        systolic=item.systolic,
+        diastolic=item.diastolic,
+        pulse=item.pulse,
+        memo=item.memo,
+        level=_classify_level(item.systolic, item.diastolic),
+        created_at=item.created_at,
+    )
