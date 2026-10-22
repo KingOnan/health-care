@@ -1,8 +1,9 @@
 from datetime import datetime
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.database import execute_and_get_rowcount
 from app.models.blood_pressure import BloodPressure
 from app.schemas.blood_pressure import BloodPressureCreate, BloodPressureUpdate
 
@@ -97,3 +98,22 @@ async def update_blood_pressure(
     item.memo = data.memo
 
     return True
+
+
+# 혈압 단건 삭제
+async def delete_blood_pressure(
+    db: AsyncSession,
+    user_seq: int,
+    blood_pressure_seq: int,
+) -> bool:
+    rowcount = await execute_and_get_rowcount(
+        db,
+        # fmt: off
+        delete(BloodPressure)
+        .where(
+            BloodPressure.blood_pressure_seq == blood_pressure_seq,
+            BloodPressure.user_seq == user_seq,
+        ),
+    )
+
+    return rowcount > 0

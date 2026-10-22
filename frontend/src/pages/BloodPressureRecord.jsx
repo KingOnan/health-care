@@ -8,9 +8,10 @@ import MonthSelector from "../components/MonthSelector";
 import StatusLegend from "../components/StatusLegend";
 import RecordTable from "../components/RecordTable";
 import RowActionDialog from "../components/RowActionDialog";
+import ConfirmDialog from "../components/ConfirmDialog";
 import Toast from "../components/Toast";
 import useBackToClose from "../hooks/useBackToClose";
-import { getBloodPressureList } from "../api/bloodPressure";
+import { deleteBloodPressure, getBloodPressureList } from "../api/bloodPressure";
 import { getToken } from "../utils/user";
 import { levelToStatus } from "../utils/bpStatus";
 import { STATUS_TEXT_CLASS } from "../utils/statusColor";
@@ -46,9 +47,10 @@ function BloodPressureRecord() {
   const [month, setMonth] = useState(now.getMonth() + 1);
   const [logs, setLogs] = useState([]);
   const [activeLog, setActiveLog] = useState(null);
-  const [dialogStep, setDialogStep] = useState("none"); // "none" | "action"
+  const [dialogStep, setDialogStep] = useState("none"); // "none" | "action" | "confirm"
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
+  const [toastVariant, setToastVariant] = useState("success");
   useBackToClose(dialogStep !== "none", () => setDialogStep("none"));
 
   const isCurrentMonth = year === now.getFullYear() && month === now.getMonth() + 1;
@@ -92,11 +94,23 @@ function BloodPressureRecord() {
     }
   };
 
-  const notifyNotReady = () => {
-    setDialogStep("none");
-    setToastMessage("삭제는 아직 준비 중이에요");
+  const notify = (message, variant = "success") => {
+    setToastMessage(message);
+    setToastVariant(variant);
     setShowToast(true);
     setTimeout(() => setShowToast(false), 1500);
+  };
+
+  const handleDelete = async () => {
+    setDialogStep("none");
+
+    try {
+      await deleteBloodPressure(activeLog.id, getToken());
+      setLogs((prev) => prev.filter((log) => log.blood_pressure_seq !== activeLog.id));
+      notify("삭제했어요");
+    } catch {
+      notify("삭제에 실패했어요", "error");
+    }
   };
 
   const activeLogTitle = activeLog ? `${activeLog.date} ${activeLog.time}` : "";
@@ -192,11 +206,20 @@ function BloodPressureRecord() {
         details={activeLogDetails}
         memo={activeLog?.memo ?? ""}
         onEdit={() => navigate(`/blood-pressure/manage/${activeLog.id}`)}
-        onDelete={notifyNotReady}
+        onDelete={() => setDialogStep("confirm")}
         onClose={() => setDialogStep("none")}
       />
 
-      <Toast show={showToast} message={toastMessage} />
+      <ConfirmDialog
+        open={dialogStep === "confirm"}
+        manageHistory={false}
+        title="이 기록을 삭제할까요?"
+        message="삭제하면 되돌릴 수 없어요."
+        onCancel={() => setDialogStep("none")}
+        onConfirm={handleDelete}
+      />
+
+      <Toast show={showToast} message={toastMessage} variant={toastVariant} />
 
       <BottomNav active="bp" />
     </div>

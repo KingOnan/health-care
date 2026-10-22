@@ -65,3 +65,15 @@ export async function updateBloodPressure(bloodPressureSeq, data, token) {
   const { data: result } = await response.json();
   return result;
 }
+
+// 혈압 기록 삭제
+export async function deleteBloodPressure(bloodPressureSeq, token) {
+  const response = await fetch(`${API_BASE_URL}/blood-pressure/${bloodPressureSeq}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    throw new Error("혈압 기록 삭제 실패");
+  }
+}

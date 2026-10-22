@@ -69,3 +69,18 @@ async def update_blood_pressure(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="혈압 기록을 찾을 수 없습니다.")
 
     return ApiResponse(data=result)
+
+
+# 혈압 단건 삭제
+@router.delete("/{blood_pressure_seq}", response_model=ApiResponse[None])
+async def delete_blood_pressure(
+    blood_pressure_seq: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> ApiResponse[None]:
+    deleted = await blood_pressure_service.delete_blood_pressure(db, current_user.user_seq, blood_pressure_seq)
+
+    if not deleted:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="혈압 기록을 찾을 수 없습니다.")
+
+    return ApiResponse()

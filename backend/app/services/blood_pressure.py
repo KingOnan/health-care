@@ -56,6 +56,20 @@ async def update_blood_pressure(
     return blood_pressure_seq
 
 
+# 혈압 단건 삭제
+async def delete_blood_pressure(
+    db: AsyncSession,
+    user_seq: int,
+    blood_pressure_seq: int,
+) -> bool:
+    deleted = await blood_pressure_repo.delete_blood_pressure(db, user_seq, blood_pressure_seq)
+
+    if deleted:
+        await db.commit()
+
+    return deleted
+
+
 def _classify_level(systolic: int, diastolic: int) -> BloodPressureLevel:
     # 노인층에 흔한 수축기단독고혈압(수축기만 높고 이완기는 정상/낮음)을 저혈압으로 오판하지 않도록,
     # 고혈압 여부를 저혈압보다 먼저 확인함
