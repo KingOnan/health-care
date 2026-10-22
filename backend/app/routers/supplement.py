@@ -114,18 +114,18 @@ async def get_supplement_item_photo(
 
 
 # 영양제 삭제 (스케줄/복용 기록은 DB에서 cascade로 함께 삭제됨)
-@router.delete("/{supplement_item_seq}", response_model=ApiResponse[int])
+@router.delete("/{supplement_item_seq}", response_model=ApiResponse[None])
 async def delete_supplement(
     supplement_item_seq: int,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
-) -> ApiResponse[int]:
+) -> ApiResponse[None]:
     deleted = await supplement_service.delete_supplement(db, current_user.user_seq, supplement_item_seq)
 
     if not deleted:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="영양제 항목을 찾을 수 없습니다.")
 
-    return ApiResponse(data=supplement_item_seq)
+    return ApiResponse()
 
 
 # 영양제 복용 상태 변경

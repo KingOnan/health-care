@@ -124,18 +124,18 @@ async def get_medication_item_photo(
 
 
 # 약 삭제 (스케줄/복용 기록은 DB에서 cascade로 함께 삭제됨)
-@router.delete("/{medication_item_seq}", response_model=ApiResponse[int])
+@router.delete("/{medication_item_seq}", response_model=ApiResponse[None])
 async def delete_medication(
     medication_item_seq: int,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
-) -> ApiResponse[int]:
+) -> ApiResponse[None]:
     deleted = await medication_service.delete_medication(db, current_user.user_seq, medication_item_seq)
 
     if not deleted:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="약 항목을 찾을 수 없습니다.")
 
-    return ApiResponse(data=medication_item_seq)
+    return ApiResponse()
 
 
 # 약 복용 상태 변경
