@@ -5,7 +5,6 @@ from sqlalchemy import and_, delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import load_only, selectinload
 
-from app.database import execute_and_get_rowcount
 from app.kst import intake_today_kst, now_kst
 from app.models.enums import CheckStatus, SupplementEatStatus
 from app.models.supplement_item import SupplementItem
@@ -212,23 +211,27 @@ async def get_supplement_item_photo_path(
     )
 
 
-# 영양제 삭제 (cascade)
+# 영양제 삭제 (스케줄/복용 기록은 DB에서 cascade로 함께 삭제됨)
 async def delete_supplement(
     db: AsyncSession,
     user_seq: int,
     supplement_item_seq: int,
 ) -> bool:
-    rowcount = await execute_and_get_rowcount(
-        db,
+    item = await db.scalar(
         # fmt: off
-        delete(SupplementItem)
+        select(SupplementItem)
         .where(
-            SupplementItem.user_seq == user_seq,
             SupplementItem.supplement_item_seq == supplement_item_seq,
-        ),
+            SupplementItem.user_seq == user_seq,
+        )
     )
 
-    return rowcount > 0
+    if item is None:
+        return False
+
+    await db.delete(item)
+
+    return True
 
 
 # 영양제 복용 상태 변경

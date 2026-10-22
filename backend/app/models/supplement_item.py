@@ -25,4 +25,10 @@ class SupplementItem(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), comment="만들어진 날짜")
 
     # DB 컬럼 아님, 연관된 스케줄들을 파이썬 객체로 접근하기 위한 선언 (항상 복용 시각 오름차순으로 정렬)
-    schedules: Mapped[list[SupplementSchedule]] = relationship(order_by=SupplementSchedule.scheduled_time)
+    # 항목을 db.delete()로 지우면 스케줄(과 그 복용 기록)도 함께 지워지는 관계. 실제 삭제는 DB의
+    # ON DELETE CASCADE에 맡겨서(passive_deletes) 스케줄을 미리 불러오지 않음
+    schedules: Mapped[list[SupplementSchedule]] = relationship(
+        order_by=SupplementSchedule.scheduled_time,
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )

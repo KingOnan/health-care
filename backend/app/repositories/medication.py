@@ -5,7 +5,6 @@ from sqlalchemy import and_, delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import load_only, selectinload
 
-from app.database import execute_and_get_rowcount
 from app.kst import intake_today_kst, now_kst
 from app.models.enums import CheckStatus, MedicationEatStatus
 from app.models.medication_item import MedicationItem
@@ -232,23 +231,27 @@ async def get_medication_item_photo_path(
     )
 
 
-# 약 삭제 (cascade)
+# 약 삭제 (스케줄/복용 기록은 DB에서 cascade로 함께 삭제됨)
 async def delete_medication(
     db: AsyncSession,
     user_seq: int,
     medication_item_seq: int,
 ) -> bool:
-    rowcount = await execute_and_get_rowcount(
-        db,
+    item = await db.scalar(
         # fmt: off
-        delete(MedicationItem)
+        select(MedicationItem)
         .where(
-            MedicationItem.user_seq == user_seq,
             MedicationItem.medication_item_seq == medication_item_seq,
-        ),
+            MedicationItem.user_seq == user_seq,
+        )
     )
 
-    return rowcount > 0
+    if item is None:
+        return False
+
+    await db.delete(item)
+
+    return True
 
 
 # 약 복용 상태 변경. 넘겨받은 status는 서비스 계층이 종료 규칙까지 적용해 결정한 값
