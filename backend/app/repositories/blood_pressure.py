@@ -50,6 +50,7 @@ async def get_blood_pressure_list(
             BloodPressure.measured_at >= start,
             BloodPressure.measured_at < end,
         )
+        .order_by(BloodPressure.measured_at.desc())
     )
 
     return list(result.all())
