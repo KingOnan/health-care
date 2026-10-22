@@ -223,8 +223,8 @@ async def get_medication_item_today_list(
 
     # 1. records(레파지토리가 준 원본 데이터)를 하나씩 돌면서, 각각 시간대 분류·상태·놓침 여부를 계산해서
     #    MedicationTodayItemResponse로 만들고 result에 쌓음 (is_next는 일단 False)
-    # 2. result를 정렬 — 지금이 속한 시간대를 맨 앞으로 두고 나머지는 순환 순서로(예: 지금이 저녁이면
-    #    저녁→밤→아침→점심), 단 오늘 전체가 전부 체크됐으면 그냥 아침→점심→저녁→밤 고정 순서로 보여줌
+    # 2. result를 정렬 — 아직 안 끝난 그룹(지금·앞으로의 시간대 중 미확인 항목이 남은 그룹)이 위,
+    #    끝난 그룹(전부 체크했거나 시간대가 지난 그룹)이 아래. 각각 안에서는 아침→점심→저녁→밤 순서
     # 3. 정렬된 result를 앞에서부터 훑다가, 안 지났고 미확인인 첫 항목에만 is_next = True 찍고 멈춤
 
     records = await medication_repo.get_medication_item_today_list(db, user_seq)
@@ -249,27 +249,21 @@ async def get_medication_item_today_list(
             )
         )
 
-    # 오늘 전체가 전부 체크됐으면("미확인" 항목이 하나도 없으면) 순환 없이 고정 순서로 보여줌
-    all_done = all(item.status is not None for item in result)
-
-    # 그룹(아침/점심/저녁/밤)별로 그 안의 항목이 전부 체크됐는지 미리 계산 — 다 끝난 그룹은
-    # 로테이션 순서와 무관하게 아직 안 끝난 그룹들보다 뒤로 감
-    group_all_done = {
-        group: all(item.status is not None for item in result if item.time_group == group) for group in _GROUP_ORDER
+    # 그룹(아침/점심/저녁/밤)별로 "끝났는가"를 미리 계산 — 시간대가 이미 지났거나, 그 안의 항목을 전부
+    # 체크했으면 끝난 그룹. 놓친 항목이 있어도 시간대가 지났으면 끝난 그룹으로 봄(놓침 표시는 그대로 붙음)
+    group_finished = {
+        group: _is_group_passed(group, now)
+        or all(item.status is not None for item in result if item.time_group == group)
+        for group in _GROUP_ORDER
     }
 
-    # 지금이 속한 시간대를 맨 앞으로 두고, 나머지는 그 뒤로 순환(예: 지금이 저녁이면 저녁→밤→아침→점심)
-    current_group = _time_group(now)
-    current_index = _GROUP_ORDER.index(current_group)
-    rotated_order = _GROUP_ORDER[current_index:] + _GROUP_ORDER[:current_index]
-    group_order = _GROUP_ORDER if all_done else rotated_order
-
-    # 안 끝난 그룹은 로테이션 순서로 먼저, 다 끝난 그룹은 그 뒤에(전체가 다 끝났으면 이 구분은 무의미해짐),
+    # 안 끝난 그룹이 먼저, 끝난 그룹이 그 뒤. 각각 안에서는 아침→점심→저녁→밤 순서라, 안 끝난 그룹 중에선
+    # 지금 시간대가 자연스럽게 맨 위에 옴(그보다 이른 시간대는 이미 지나서 끝난 그룹 쪽으로 가므로).
     # 같은 그룹 안에서는 이른 시각 순
     result.sort(
         key=lambda item: (
-            False if all_done else group_all_done[item.time_group],  # 그룹이 전부 체크됐는가?
-            group_order.index(item.time_group),
+            group_finished[item.time_group],  # 그룹이 끝났는가?
+            _GROUP_ORDER.index(item.time_group),
             _minutes_since_day_start(item.scheduled_time),  # 정확한 시각(자정을 걸치는 "밤"도 순서가 맞게)
         )
     )
