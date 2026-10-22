@@ -16,6 +16,18 @@ import useToastNavigate from "../hooks/useToastNavigate";
 import { createBloodPressure, getBloodPressure, updateBloodPressure } from "../api/bloodPressure";
 import { getToken } from "../utils/user";
 
+// 입력 허용 범위 (서버 스키마와 같은 값) — 가정용 혈압계가 표시할 수 있는 값은 막지 않음
+const SYSTOLIC_RANGE = [50, 299];
+const DIASTOLIC_RANGE = [30, 250];
+const PULSE_RANGE = [30, 200];
+const MEMO_MAX_LENGTH = 100;
+
+// 빈 칸이거나 정수가 아니거나 범위 밖이면 false
+function isInRange(text, [min, max]) {
+  const n = Number(text);
+  return text !== "" && Number.isInteger(n) && n >= min && n <= max;
+}
+
 // "오전"/"오후" + 12시간제 시각을 24시간제 시(0~23)로 변환
 function to24Hour(period, hour12) {
   const h = Number(hour12) % 12;
@@ -87,6 +99,28 @@ function BloodPressureManage() {
 
   const handleSubmit = async () => {
     if (!isLoaded) return;
+
+    // 저장 전에 화면에서 먼저 확인해서 바로 안내 (서버도 같은 기준으로 한 번 더 검증함)
+    if (systolic === "" || diastolic === "" || pulse === "") {
+      handleSave("수축기·이완기·맥박을 모두 입력해 주세요", "error");
+      return;
+    }
+    if (!isInRange(systolic, SYSTOLIC_RANGE)) {
+      handleSave(`수축기는 ${SYSTOLIC_RANGE[0]}~${SYSTOLIC_RANGE[1]} 사이로 입력해 주세요`, "error");
+      return;
+    }
+    if (!isInRange(diastolic, DIASTOLIC_RANGE)) {
+      handleSave(`이완기는 ${DIASTOLIC_RANGE[0]}~${DIASTOLIC_RANGE[1]} 사이로 입력해 주세요`, "error");
+      return;
+    }
+    if (!isInRange(pulse, PULSE_RANGE)) {
+      handleSave(`맥박은 ${PULSE_RANGE[0]}~${PULSE_RANGE[1]} 사이로 입력해 주세요`, "error");
+      return;
+    }
+    if (Number(diastolic) >= Number(systolic)) {
+      handleSave("이완기는 수축기보다 낮아야 해요\n두 값이 바뀌지 않았는지 확인해 주세요", "error");
+      return;
+    }
 
     const hour24 = to24Hour(period, hour);
     const measuredAt = `${yearInput}-${String(monthInput).padStart(2, "0")}-${String(dayInput).padStart(
@@ -242,6 +276,7 @@ function BloodPressureManage() {
             <InputField
               placeholder="메모를 남겨보세요"
               type="text"
+              maxLength={MEMO_MAX_LENGTH}
               value={memo}
               onChange={(e) => setMemo(e.target.value)}
             />
