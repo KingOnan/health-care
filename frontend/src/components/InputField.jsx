@@ -10,6 +10,7 @@ function InputField({
   required,
   centerLabel = false,
   icon: Icon,
+  maxLength,
 }) {
   return (
     <label className="flex min-w-0 flex-1 flex-col gap-[10px]">
@@ -36,6 +37,7 @@ function InputField({
         placeholder={placeholder}
         value={value}
         onChange={onChange}
+        maxLength={maxLength}
         className={`min-h-14 w-full min-w-0 rounded-lg ${border} border-primary bg-surface px-3 text-lg font-semibold text-text placeholder:text-gray-400 focus:border-2 focus:outline-none`}
       />
     </label>

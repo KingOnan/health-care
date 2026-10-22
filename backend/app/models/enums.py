@@ -40,3 +40,11 @@ class BloodPressureLevel(str, enum.Enum):
     NORMAL = "정상"
     CAUTION = "주의"
     HIGH = "고혈압"
+
+
+# 혈당 4단계 판정 결과
+class BloodSugarLevel(str, enum.Enum):
+    LOW = "저혈당"
+    NORMAL = "정상"
+    CAUTION = "주의"
+    HIGH = "고혈당"

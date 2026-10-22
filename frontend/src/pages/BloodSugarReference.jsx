@@ -2,8 +2,8 @@ import { ClipboardList } from "lucide-react";
 import BottomNav from "../components/BottomNav";
 
 const ROWS = [
-  { label: "저혈당", dot: "bg-low", fasting: "70 이하", postMeal: "70 이하" },
-  { label: "정상", dot: "bg-text", fasting: "71~99", postMeal: "71~139" },
+  { label: "저혈당", dot: "bg-low", fasting: "70 미만", postMeal: "70 미만" },
+  { label: "정상", dot: "bg-text", fasting: "70~99", postMeal: "70~139" },
   { label: "주의", dot: "bg-caution", fasting: "100~125", postMeal: "140~199" },
   { label: "고혈당", dot: "bg-warning", fasting: "126 이상", postMeal: "200 이상" },
 ];

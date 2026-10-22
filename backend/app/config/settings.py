@@ -19,9 +19,12 @@ class Settings(BaseSettings):
     blood_pressure_systolic_caution_max: int
     blood_pressure_diastolic_caution_max: int
 
-    # 혈당 정상 기준 (mg/dL)
+    # 혈당 판정 기준 (mg/dL) — 저혈당 경계(공복·식후 공통) / 정상 상한 / 주의 상한
+    blood_sugar_low_boundary: int
     blood_sugar_fasting_normal_max: int
     blood_sugar_post_meal_normal_max: int
+    blood_sugar_fasting_caution_max: int
+    blood_sugar_post_meal_caution_max: int
 
     # JWT 인증
     jwt_secret_key: str

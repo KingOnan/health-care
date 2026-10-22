@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Droplet, ClipboardList, Bot } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import TopTabs from "../components/TopTabs";
@@ -10,47 +10,57 @@ import RecordTable from "../components/RecordTable";
 import RowActionDialog from "../components/RowActionDialog";
 import ConfirmDialog from "../components/ConfirmDialog";
 import Toast from "../components/Toast";
-import useToastNavigate from "../hooks/useToastNavigate";
 import useBackToClose from "../hooks/useBackToClose";
-import { INITIAL_LOGS } from "../data/bloodSugarLogs";
-import { getGlucoseStatus } from "../utils/glucoseStatus";
+import { deleteBloodSugar, getBloodSugarList } from "../api/bloodSugar";
+import { getToken } from "../utils/user";
+import { levelToStatus } from "../utils/glucoseStatus";
 import { STATUS_TEXT_CLASS } from "../utils/statusColor";
 
 const TIMING_FILTER_OPTIONS = ["전체", "공복", "식후 2시간"];
+
+// "2026-09-15T09:00:00" -> { date: "09/15", time: "09:00" }
+function splitMeasuredAt(measuredAt) {
+  const [datePart, timePart] = measuredAt.split("T");
+  const [, m, d] = datePart.split("-");
+  return { date: `${m}/${d}`, time: timePart.slice(0, 5) };
+}
 
 function BloodSugarRecord() {
   const navigate = useNavigate();
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth() + 1);
+  const [logs, setLogs] = useState([]);
   const [activeLog, setActiveLog] = useState(null);
   const [dialogStep, setDialogStep] = useState("none"); // "none" | "action" | "confirm"
   const [timingFilter, setTimingFilter] = useState("전체");
   const [showFilterDialog, setShowFilterDialog] = useState(false);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
+  const [toastVariant, setToastVariant] = useState("success");
   useBackToClose(showFilterDialog, () => setShowFilterDialog(false));
   useBackToClose(dialogStep !== "none", () => setDialogStep("none"));
 
   const isCurrentMonth = year === now.getFullYear() && month === now.getMonth() + 1;
 
-  const monthLogs = INITIAL_LOGS.filter((log) => {
-    const [y, m] = log.date.split("-").map(Number);
-    return y === year && m === month;
-  }).sort((a, b) => (a.date + a.time < b.date + b.time ? 1 : -1));
+  // 시기 필터는 서버에 check_timing 파라미터로 넘겨서 걸러 받음 (정렬도 서버가 최신순으로 해서 내려줌)
+  useEffect(() => {
+    const checkTiming = timingFilter === "전체" ? null : timingFilter;
+    getBloodSugarList(year, month, checkTiming, getToken())
+      .then(setLogs)
+      .catch(() => setLogs([]));
+  }, [year, month, timingFilter]);
 
-  const filteredLogs =
-    timingFilter === "전체"
-      ? monthLogs
-      : monthLogs.filter((log) => log.timing === timingFilter);
-
-  const rows = filteredLogs.map((log) => {
-    const [, m, d] = log.date.split("-");
+  const rows = logs.map((log) => {
+    const { date, time } = splitMeasuredAt(log.measured_at);
     return {
-      id: log.id,
-      date: `${m}/${d}`,
-      time: log.time,
-      timing: log.timing,
-      value: log.value,
-      status: getGlucoseStatus(log.timing, log.value),
+      id: log.blood_sugar_seq,
+      date,
+      time,
+      timing: log.check_timing,
+      value: log.glucose_value,
+      memo: log.memo,
+      status: levelToStatus(log.level),
     };
   });
 
@@ -95,16 +105,28 @@ function BloodSugarRecord() {
     }
   };
 
-  const { showToast, message, trigger: handleAction } = useToastNavigate({
-    message: "삭제했어요",
-  });
+  const notify = (message, variant = "success") => {
+    setToastMessage(message);
+    setToastVariant(variant);
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 1500);
+  };
 
-  const [, activeMonth, activeDay] = activeLog?.date.split("-") ?? [];
-  const activeLogTitle = activeLog
-    ? `${activeMonth}/${activeDay} ${activeLog.time}`
-    : "";
+  const handleDelete = async () => {
+    setDialogStep("none");
+
+    try {
+      await deleteBloodSugar(activeLog.id, getToken());
+      setLogs((prev) => prev.filter((log) => log.blood_sugar_seq !== activeLog.id));
+      notify("삭제했어요");
+    } catch {
+      notify("삭제에 실패했어요", "error");
+    }
+  };
+
+  const activeLogTitle = activeLog ? `${activeLog.date} ${activeLog.time}` : "";
   const activeStatusClass = activeLog
-    ? (STATUS_TEXT_CLASS[getGlucoseStatus(activeLog.timing, activeLog.value)] ?? "text-text")
+    ? (STATUS_TEXT_CLASS[activeLog.status] ?? "text-text")
     : "text-text";
   const activeLogDetails = activeLog && (
     <div className="overflow-hidden rounded-xl border-2 border-primary">
@@ -172,19 +194,27 @@ function BloodSugarRecord() {
               rows={rows}
               columns={COLUMNS}
               onRowClick={(row) => {
-                setActiveLog(monthLogs.find((log) => log.id === row.id));
+                setActiveLog(row);
                 setDialogStep("action");
               }}
             />
           </div>
         ) : (
-          <div className="flex flex-1 items-center justify-center">
-            <p className="text-center text-lg text-text-muted">
-              {timingFilter === "전체"
-                ? "이 달의 기록이 없어요."
-                : "해당 시기의 기록이 없어요."}
-            </p>
-          </div>
+          <>
+            {/* 시기 필터 결과가 비어도 헤더(필터 버튼)는 남겨둬야 다른 시기로 다시 바꿀 수 있음 */}
+            {timingFilter !== "전체" && (
+              <div>
+                <RecordTable rows={[]} columns={COLUMNS} />
+              </div>
+            )}
+            <div className="flex flex-1 items-center justify-center">
+              <p className="text-center text-lg text-text-muted">
+                {timingFilter === "전체"
+                  ? "이 달의 기록이 없어요."
+                  : "해당 시기의 기록이 없어요."}
+              </p>
+            </div>
+          </>
         )}
       </div>
 
@@ -237,13 +267,10 @@ function BloodSugarRecord() {
         title="이 기록을 삭제할까요?"
         message="삭제하면 되돌릴 수 없어요."
         onCancel={() => setDialogStep("none")}
-        onConfirm={() => {
-          setDialogStep("none");
-          handleAction();
-        }}
+        onConfirm={handleDelete}
       />
 
-      <Toast show={showToast} message={message} />
+      <Toast show={showToast} message={toastMessage} variant={toastVariant} />
 
       <BottomNav active="glucose" />
     </div>
