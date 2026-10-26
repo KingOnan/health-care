@@ -147,7 +147,7 @@ function BloodSugarStats() {
         <SegmentedToggle options={TIMING_OPTIONS} value={timing} onChange={setTiming} />
       </div>
 
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-3">
         <StatusLegend lowLabel="저혈당" highLabel="고혈당" />
 
         <div className="flex flex-col gap-3">

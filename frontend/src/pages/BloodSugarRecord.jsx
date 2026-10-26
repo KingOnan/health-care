@@ -10,9 +10,9 @@ import RecordTable from "../components/RecordTable";
 import RowActionDialog from "../components/RowActionDialog";
 import ConfirmDialog from "../components/ConfirmDialog";
 import Toast from "../components/Toast";
+import EmptyState from "../components/EmptyState";
 import useBackToClose from "../hooks/useBackToClose";
 import { deleteBloodSugar, getBloodSugarList } from "../api/bloodSugar";
-import { getToken } from "../utils/user";
 import { levelToStatus } from "../utils/glucoseStatus";
 import { STATUS_TEXT_CLASS } from "../utils/statusColor";
 
@@ -46,7 +46,7 @@ function BloodSugarRecord() {
   // 시기 필터는 서버에 check_timing 파라미터로 넘겨서 걸러 받음 (정렬도 서버가 최신순으로 해서 내려줌)
   useEffect(() => {
     const checkTiming = timingFilter === "전체" ? null : timingFilter;
-    getBloodSugarList(year, month, checkTiming, getToken())
+    getBloodSugarList(year, month, checkTiming)
       .then(setLogs)
       .catch(() => setLogs([]));
   }, [year, month, timingFilter]);
@@ -116,7 +116,7 @@ function BloodSugarRecord() {
     setDialogStep("none");
 
     try {
-      await deleteBloodSugar(activeLog.id, getToken());
+      await deleteBloodSugar(activeLog.id);
       setLogs((prev) => prev.filter((log) => log.blood_sugar_seq !== activeLog.id));
       notify("삭제했어요");
     } catch {
@@ -185,8 +185,9 @@ function BloodSugarRecord() {
         disableNext={isCurrentMonth}
       />
 
-      <div className="flex min-h-0 flex-1 flex-col gap-2">
-        <StatusLegend lowLabel="저혈당" highLabel="고혈당" />
+      <div className="flex min-h-0 flex-1 flex-col gap-3">
+        {/* 4단계 범례는 표에 기록이 있을 때만 의미가 있어서, 비어 있으면 숨김 */}
+        {rows.length > 0 && <StatusLegend lowLabel="저혈당" highLabel="고혈당" />}
 
         {rows.length > 0 ? (
           <div className="min-h-0 flex-1">
@@ -207,13 +208,13 @@ function BloodSugarRecord() {
                 <RecordTable rows={[]} columns={COLUMNS} />
               </div>
             )}
-            <div className="flex flex-1 items-center justify-center">
-              <p className="text-center text-lg text-text-muted">
-                {timingFilter === "전체"
-                  ? "이 달의 기록이 없어요."
-                  : "해당 시기의 기록이 없어요."}
-              </p>
-            </div>
+            <EmptyState
+              icon={Droplet}
+              message={timingFilter === "전체" ? "이 달의 기록이 없어요" : "해당 시기의 기록이 없어요"}
+              subMessage="혈당을 입력하면 여기에 나타나요"
+              actionLabel="혈당 입력하기"
+              onAction={() => navigate("/blood-sugar/manage")}
+            />
           </>
         )}
       </div>

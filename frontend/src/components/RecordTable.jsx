@@ -13,15 +13,15 @@ function RecordTable({ rows, columns, onRowClick }) {
           </colgroup>
           <thead className="sticky top-0">
             <tr className="bg-primary text-white">
-              {columns.map((col, i) => (
+              {columns.map((col) => (
                 <th
                   key={col.key}
                   onClick={col.onHeaderClick}
-                  className={`whitespace-nowrap px-1 py-1.5 font-semibold ${
+                  className={`whitespace-nowrap py-1.5 font-semibold ${
                     col.onHeaderClick
                       ? "cursor-pointer underline decoration-dotted underline-offset-4"
                       : ""
-                  } ${i === columns.length - 1 ? "pr-3" : ""}`}
+                  }`}
                 >
                   <span className="flex items-center justify-center gap-0.5">
                     {col.label}
@@ -39,16 +39,16 @@ function RecordTable({ rows, columns, onRowClick }) {
                 <tr
                   key={i}
                   onClick={() => onRowClick?.(row)}
-                  className={`${onRowClick ? "cursor-pointer active:bg-page-bg" : ""} ${
-                    i < rows.length - 1 ? "border-b border-primary" : ""
+                  className={`divide-x divide-primary/30 ${onRowClick ? "cursor-pointer active:bg-page-bg" : ""} ${
+                    i < rows.length - 1 ? "border-b-2 border-primary" : ""
                   }`}
                 >
-                  {columns.map((col, ci) => (
+                  {columns.map((col) => (
                     <td
                       key={col.key}
-                      className={`whitespace-nowrap px-1 py-2 ${
+                      className={`whitespace-nowrap py-2 ${
                         col.statusColored ? `font-bold ${statusClass}` : ""
-                      } ${ci === columns.length - 1 ? "pr-3" : ""}`}
+                      }`}
                     >
                       {col.render ? col.render(row) : row[col.key]}
                     </td>

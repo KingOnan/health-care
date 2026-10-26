@@ -10,9 +10,9 @@ import RecordTable from "../components/RecordTable";
 import RowActionDialog from "../components/RowActionDialog";
 import ConfirmDialog from "../components/ConfirmDialog";
 import Toast from "../components/Toast";
+import EmptyState from "../components/EmptyState";
 import useBackToClose from "../hooks/useBackToClose";
 import { deleteBloodPressure, getBloodPressureList } from "../api/bloodPressure";
-import { getToken } from "../utils/user";
 import { levelToStatus } from "../utils/bpStatus";
 import { STATUS_TEXT_CLASS } from "../utils/statusColor";
 
@@ -28,9 +28,9 @@ const COLUMNS = [
       </span>
     ),
   },
-  { key: "systolic", label: "수축", width: "w-[4rem]", statusColored: true },
-  { key: "diastolic", label: "이완", width: "w-[4rem]", statusColored: true },
-  { key: "pulse", label: "맥박", width: "w-[4.2rem]" },
+  { key: "systolic", label: "수축", width: "w-[65px]", statusColored: true },
+  { key: "diastolic", label: "이완", width: "w-[65px]", statusColored: true },
+  { key: "pulse", label: "맥박", width: "w-[65px]" },
 ];
 
 // "2026-09-15T09:00:00" -> { date: "09/15", time: "09:00" }
@@ -56,7 +56,7 @@ function BloodPressureRecord() {
   const isCurrentMonth = year === now.getFullYear() && month === now.getMonth() + 1;
 
   useEffect(() => {
-    getBloodPressureList(year, month, getToken())
+    getBloodPressureList(year, month)
       .then(setLogs)
       .catch(() => setLogs([]));
   }, [year, month]);
@@ -105,7 +105,7 @@ function BloodPressureRecord() {
     setDialogStep("none");
 
     try {
-      await deleteBloodPressure(activeLog.id, getToken());
+      await deleteBloodPressure(activeLog.id);
       setLogs((prev) => prev.filter((log) => log.blood_pressure_seq !== activeLog.id));
       notify("삭제했어요");
     } catch {
@@ -176,8 +176,9 @@ function BloodPressureRecord() {
         disableNext={isCurrentMonth}
       />
 
-      <div className="flex min-h-0 flex-1 flex-col gap-2">
-        <StatusLegend />
+      <div className="flex min-h-0 flex-1 flex-col gap-3">
+        {/* 4단계 범례는 표에 기록이 있을 때만 의미가 있어서, 비어 있으면 숨김 */}
+        {rows.length > 0 && <StatusLegend />}
 
         {rows.length > 0 ? (
           <div className="min-h-0 flex-1">
@@ -191,11 +192,13 @@ function BloodPressureRecord() {
             />
           </div>
         ) : (
-          <div className="flex flex-1 items-center justify-center">
-            <p className="text-center text-lg text-text-muted">
-              이 달의 기록이 없어요.
-            </p>
-          </div>
+          <EmptyState
+            icon={HeartPulse}
+            message="이 달의 기록이 없어요"
+            subMessage="혈압을 입력하면 여기에 나타나요"
+            actionLabel="혈압 입력하기"
+            onAction={() => navigate("/blood-pressure/manage")}
+          />
         )}
       </div>
 
