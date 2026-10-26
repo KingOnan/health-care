@@ -7,6 +7,7 @@ import {
   Trash2,
   Tag,
   Clock,
+  Bot,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -14,8 +15,8 @@ import {
   getMedicationItemList,
   updateMedicationStatus,
 } from "../api/medication";
-import { getToken } from "../utils/user";
 import Toast from "../components/Toast";
+import AddMenuButton from "../components/AddMenuButton";
 import EmptyState from "../components/EmptyState";
 import ConfirmDialog from "../components/ConfirmDialog";
 import BottomNav from "../components/BottomNav";
@@ -47,7 +48,7 @@ function MedicationList() {
   });
 
   useEffect(() => {
-    getMedicationItemList(getToken())
+    getMedicationItemList()
       .then((data) => setItems(data.map(toViewItem)))
       .catch(() => {});
   }, []);
@@ -57,9 +58,9 @@ function MedicationList() {
     setPendingEndId(null);
 
     try {
-      await updateMedicationStatus(id, "종료", getToken());
+      await updateMedicationStatus(id, "종료");
       // 종료된 약은 목록 맨 뒤로 내려가야 해서, 서버가 정렬해준 순서를 다시 받아옴
-      const data = await getMedicationItemList(getToken());
+      const data = await getMedicationItemList();
       setItems(data.map(toViewItem));
       handleAction("종료했어요");
     } catch {
@@ -72,7 +73,7 @@ function MedicationList() {
     setPendingDeleteId(null);
 
     try {
-      await deleteMedication(id, getToken());
+      await deleteMedication(id);
       setItems((prev) => prev.filter((item) => item.id !== id));
       handleAction("삭제했어요");
     } catch {
@@ -82,11 +83,29 @@ function MedicationList() {
 
   return (
     <div className="theme-medication flex min-h-svh flex-col bg-page-bg">
-      <header className="fixed inset-x-0 top-0 z-10 mx-auto flex w-full max-w-[480px] items-center gap-3 border-b-2 border-gray-200 bg-surface px-6 py-4">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary text-white">
-          <Pill size={22} />
+      <header className="fixed inset-x-0 top-0 z-10 mx-auto flex w-full max-w-[480px] items-center justify-between border-b-2 border-gray-200 bg-surface px-6 py-[14px]">
+        <div className="flex items-center gap-3">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary text-white">
+            <Pill size={22} />
+          </div>
+          <h1 className="text-heading font-bold">약 목록</h1>
         </div>
-        <h1 className="text-heading font-bold">약 목록</h1>
+        <AddMenuButton
+          themeClass="theme-medication"
+          size="sm"
+          options={[
+            {
+              icon: Pill,
+              label: "약 추가",
+              onClick: () => navigate("/medication/manage"),
+            },
+            {
+              icon: Bot,
+              label: "약 챗봇",
+              onClick: () => navigate("/chatbot/medication"),
+            },
+          ]}
+        />
       </header>
 
       <div className="flex flex-col gap-7 p-6 pt-[100px] pb-26">

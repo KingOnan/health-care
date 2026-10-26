@@ -8,6 +8,7 @@ import {
   Trash2,
   Tag,
   Clock,
+  Bot,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -15,8 +16,8 @@ import {
   getSupplementItemList,
   updateSupplementStatus,
 } from "../api/supplement";
-import { getToken } from "../utils/user";
 import Toast from "../components/Toast";
+import AddMenuButton from "../components/AddMenuButton";
 import EmptyState from "../components/EmptyState";
 import ConfirmDialog from "../components/ConfirmDialog";
 import BottomNav from "../components/BottomNav";
@@ -48,7 +49,7 @@ function SupplementList() {
   });
 
   useEffect(() => {
-    getSupplementItemList(getToken())
+    getSupplementItemList()
       .then((data) => setItems(data.map(toViewItem)))
       .catch(() => {});
   }, []);
@@ -59,11 +60,7 @@ function SupplementList() {
     setPendingPauseId(null);
 
     try {
-      await updateSupplementStatus(
-        id,
-        wasPaused ? "복용중" : "중지",
-        getToken(),
-      );
+      await updateSupplementStatus(id, wasPaused ? "복용중" : "중지");
       setItems((prev) =>
         prev.map((item) =>
           item.id === id ? { ...item, paused: !item.paused } : item,
@@ -83,7 +80,7 @@ function SupplementList() {
     setPendingDeleteId(null);
 
     try {
-      await deleteSupplement(id, getToken());
+      await deleteSupplement(id);
       setItems((prev) => prev.filter((item) => item.id !== id));
       handleAction("삭제했어요");
     } catch {
@@ -93,11 +90,29 @@ function SupplementList() {
 
   return (
     <div className="theme-supplement flex min-h-svh flex-col bg-page-bg">
-      <header className="fixed inset-x-0 top-0 z-10 mx-auto flex w-full max-w-[480px] items-center gap-3 border-b-2 border-gray-200 bg-surface px-6 py-4">
-        <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary text-white">
-          <PillBottle size={22} />
+      <header className="fixed inset-x-0 top-0 z-10 mx-auto flex w-full max-w-[480px] items-center justify-between border-b-2 border-gray-200 bg-surface px-6 py-[14px]">
+        <div className="flex items-center gap-3">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary text-white">
+            <PillBottle size={22} />
+          </div>
+          <h1 className="text-heading font-bold">영양제 목록</h1>
         </div>
-        <h1 className="text-heading font-bold">영양제 목록</h1>
+        <AddMenuButton
+          themeClass="theme-supplement"
+          size="sm"
+          options={[
+            {
+              icon: PillBottle,
+              label: "영양제 추가",
+              onClick: () => navigate("/supplement/manage"),
+            },
+            {
+              icon: Bot,
+              label: "영양제 챗봇",
+              onClick: () => navigate("/chatbot/supplement"),
+            },
+          ]}
+        />
       </header>
 
       <div className="flex flex-col gap-7 p-6 pt-[100px] pb-26">

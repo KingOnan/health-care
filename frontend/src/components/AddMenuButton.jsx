@@ -4,7 +4,9 @@ import { Plus } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import useBackToClose from "../hooks/useBackToClose";
 
-function AddMenuButton({ options, themeClass }) {
+// size: "md"(기본, 메인 탭 화면) / "sm"(제목줄이 있는 하위 화면 — 제목줄 위아래 여백을 줄여서 높이를 다른 화면과 같게 맞춰 씀)
+function AddMenuButton({ options, themeClass, size = "md" }) {
+  const isSmall = size === "sm";
   const [isOpen, setIsOpen] = useState(false);
   useBackToClose(isOpen, () => setIsOpen(false));
 
@@ -12,14 +14,14 @@ function AddMenuButton({ options, themeClass }) {
     <div className="relative">
       <button
         onClick={() => setIsOpen((prev) => !prev)}
-        className={`relative flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white transition active:scale-95 ${
+        className={`relative flex ${isSmall ? "h-12 w-12" : "h-14 w-14"} items-center justify-center rounded-full bg-primary text-white transition active:scale-95 ${
           isOpen ? "rotate-45" : ""
         }`}
         style={{
           boxShadow: "0 4px 6px rgba(0, 0, 0, 0.3), inset 0 -3px 5px rgba(0, 0, 0, 0.25)",
         }}
       >
-        <Plus size={26} strokeWidth={2.5} className="relative z-10" />
+        <Plus size={isSmall ? 24 : 26} strokeWidth={2.5} className="relative z-10" />
       </button>
 
       {createPortal(
