@@ -1,5 +1,6 @@
 import { Pill, PillBottle, HeartPulse, Droplet, Settings } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import useKeyboardOpen from "../hooks/useKeyboardOpen";
 
 const NAV_ITEMS = [
   {
@@ -16,6 +17,9 @@ const NAV_ITEMS = [
 
 function BottomNav({ active = "bp" }) {
   const navigate = useNavigate();
+  // 키패드가 떠 있는 동안은 메뉴를 숨김 — 키패드 바로 위에 붙어서 입력칸을 가리기 때문
+  const isKeyboardOpen = useKeyboardOpen();
+  if (isKeyboardOpen) return null;
 
   return (
     <nav className="fixed inset-x-0 bottom-0 mx-auto flex w-full max-w-[480px] divide-x-[1.8px] divide-gray-200 bg-surface shadow-[0_-3px_6px_rgba(0,0,0,0.2)]">
