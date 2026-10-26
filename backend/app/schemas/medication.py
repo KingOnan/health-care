@@ -1,21 +1,26 @@
 from datetime import datetime, time
-from typing import Self
+from typing import Annotated, Self
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, StringConstraints, model_validator
 
 from app.models.enums import CheckStatus, EatTiming, MedicationEatStatus
+
+# 입력 제한 — 명칭은 필수(공백만 있으면 빈 값으로 봄), 글자 수는 DB 컬럼 길이와 같게 맞춰 저장 시 서버 오류를 막음
+ItemName = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=50)]
+ShortText = Annotated[str | None, Field(max_length=50)]
+LongText = Annotated[str | None, Field(max_length=500)]
 
 
 # 약 항목 등록 요청
 class MedicationItemCreate(BaseModel):
-    name: str
+    name: ItemName
     timing: EatTiming
     status: MedicationEatStatus
     is_prescription: bool = False
-    product_name: str | None = None
-    company_name: str | None = None
-    nutrition_info: str | None = None
-    description: str | None = None
+    product_name: ShortText = None
+    company_name: ShortText = None
+    nutrition_info: LongText = None
+    description: LongText = None
     scheduled_times: list[time] = Field(min_length=1)
 
     # 처방약은 봉지 하나에 여러 성분이 섞여 나와서 "제품 하나"로 특정되지 않아, 제품명·회사명·함량을 두지 않음.
@@ -40,14 +45,14 @@ class MedicationScheduleUpdate(BaseModel):
 # 약 항목 수정 요청. 스케줄은 시각 값만 받는 등록과 달리, 기존 스케줄과 매칭하기 위해
 # medication_schedule_seq를 함께 받음
 class MedicationItemUpdate(BaseModel):
-    name: str
+    name: ItemName
     timing: EatTiming
     status: MedicationEatStatus
     is_prescription: bool = False
-    product_name: str | None = None
-    company_name: str | None = None
-    nutrition_info: str | None = None
-    description: str | None = None
+    product_name: ShortText = None
+    company_name: ShortText = None
+    nutrition_info: LongText = None
+    description: LongText = None
     schedules: list[MedicationScheduleUpdate] = Field(min_length=1)
 
     # 등록 요청과 같은 이유로, 처방약이면 제품명·회사명·함량을 서버에서 비움

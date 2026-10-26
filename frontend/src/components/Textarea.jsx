@@ -8,6 +8,7 @@ function Textarea({
   required,
   rows = 3,
   icon: Icon,
+  maxLength,
 }) {
   return (
     <label className="flex min-w-0 flex-1 flex-col gap-[10px]">
@@ -28,6 +29,7 @@ function Textarea({
       <textarea
         placeholder={placeholder}
         value={value}
+        maxLength={maxLength}
         onChange={onChange}
         rows={rows}
         className="w-full min-w-0 resize-none rounded-lg border border-primary bg-surface px-3 py-3 text-lg font-semibold text-text placeholder:text-gray-400 focus:border-2 focus:outline-none"

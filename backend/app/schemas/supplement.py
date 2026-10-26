@@ -1,19 +1,25 @@
 from datetime import datetime, time
+from typing import Annotated
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, StringConstraints
 
 from app.models.enums import CheckStatus, EatTiming, SupplementEatStatus
+
+# 입력 제한 — 명칭은 필수(공백만 있으면 빈 값으로 봄), 글자 수는 DB 컬럼 길이와 같게 맞춰 저장 시 서버 오류를 막음
+ItemName = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=50)]
+ShortText = Annotated[str | None, Field(max_length=50)]
+LongText = Annotated[str | None, Field(max_length=500)]
 
 
 # 영양제 항목 등록 요청
 class SupplementItemCreate(BaseModel):
-    name: str
+    name: ItemName
     timing: EatTiming
     status: SupplementEatStatus
-    product_name: str | None = None
-    company_name: str | None = None
-    nutrition_info: str | None = None
-    description: str | None = None
+    product_name: ShortText = None
+    company_name: ShortText = None
+    nutrition_info: LongText = None
+    description: LongText = None
     scheduled_times: list[time] = Field(min_length=1)
 
 
@@ -27,13 +33,13 @@ class SupplementScheduleUpdate(BaseModel):
 # 영양제 항목 수정 요청. 스케줄은 시각 값만 받는 등록과 달리, 기존 스케줄과 매칭하기 위해
 # supplement_schedule_seq를 함께 받음
 class SupplementItemUpdate(BaseModel):
-    name: str
+    name: ItemName
     timing: EatTiming
     status: SupplementEatStatus
-    product_name: str | None = None
-    company_name: str | None = None
-    nutrition_info: str | None = None
-    description: str | None = None
+    product_name: ShortText = None
+    company_name: ShortText = None
+    nutrition_info: LongText = None
+    description: LongText = None
     schedules: list[SupplementScheduleUpdate] = Field(min_length=1)
 
 

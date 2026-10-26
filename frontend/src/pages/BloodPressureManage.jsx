@@ -11,10 +11,10 @@ import {
 import InputField from "../components/InputField";
 import Button from "../components/Button";
 import Toast from "../components/Toast";
+import { isIntInRange, isValidDate } from "../utils/formValidation";
 import BottomNav from "../components/BottomNav";
 import useToastNavigate from "../hooks/useToastNavigate";
 import { createBloodPressure, getBloodPressure, updateBloodPressure } from "../api/bloodPressure";
-import { getToken } from "../utils/user";
 
 // 입력 허용 범위 (서버 스키마와 같은 값) — 가정용 혈압계가 표시할 수 있는 값은 막지 않음
 const SYSTOLIC_RANGE = [50, 299];
@@ -64,7 +64,7 @@ function BloodPressureManage() {
   useEffect(() => {
     if (!isEditMode) return;
 
-    getBloodPressure(id, getToken())
+    getBloodPressure(id)
       .then((item) => {
         // "2026-10-01T07:30:00" -> 날짜/시각 입력칸 값으로 분해
         const [datePart, timePart] = item.measured_at.split("T");
@@ -101,16 +101,33 @@ function BloodPressureManage() {
     if (!isLoaded) return;
 
     // 저장 전에 화면에서 먼저 확인해서 바로 안내 (서버도 같은 기준으로 한 번 더 검증함)
-    if (systolic === "" || diastolic === "" || pulse === "") {
-      handleSave("수축기·이완기·맥박을 모두 입력해 주세요", "error");
+    if (!isValidDate(yearInput, monthInput, dayInput)) {
+      handleSave("날짜를 올바르게 입력해 주세요", "error");
+      return;
+    }
+    if (!isIntInRange(hour, 1, 12) || !isIntInRange(minute, 0, 59)) {
+      handleSave("시간을 올바르게 입력해 주세요", "error");
+      return;
+    }
+    // 수축기 → 이완기 → 맥박 순서로 하나씩 확인해서, 어느 칸이 문제인지 바로 알 수 있게 안내
+    if (systolic === "") {
+      handleSave("수축기를 입력해 주세요", "error");
       return;
     }
     if (!isInRange(systolic, SYSTOLIC_RANGE)) {
       handleSave(`수축기는 ${SYSTOLIC_RANGE[0]}~${SYSTOLIC_RANGE[1]} 사이로 입력해 주세요`, "error");
       return;
     }
+    if (diastolic === "") {
+      handleSave("이완기를 입력해 주세요", "error");
+      return;
+    }
     if (!isInRange(diastolic, DIASTOLIC_RANGE)) {
       handleSave(`이완기는 ${DIASTOLIC_RANGE[0]}~${DIASTOLIC_RANGE[1]} 사이로 입력해 주세요`, "error");
+      return;
+    }
+    if (pulse === "") {
+      handleSave("맥박을 입력해 주세요", "error");
       return;
     }
     if (!isInRange(pulse, PULSE_RANGE)) {
@@ -138,10 +155,10 @@ function BloodPressureManage() {
 
     try {
       if (isEditMode) {
-        await updateBloodPressure(id, data, getToken());
+        await updateBloodPressure(id, data);
         handleSave("수정했어요");
       } else {
-        await createBloodPressure(data, getToken());
+        await createBloodPressure(data);
         handleSave();
       }
     } catch {

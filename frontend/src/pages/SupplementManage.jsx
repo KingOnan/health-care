@@ -7,6 +7,7 @@ import Button from "../components/Button";
 import PhotoPicker from "../components/PhotoPicker";
 import SegmentedToggle from "../components/SegmentedToggle";
 import Toast from "../components/Toast";
+import { isBlank, isIntInRange } from "../utils/formValidation";
 import BottomNav from "../components/BottomNav";
 import {
   createSupplement,
@@ -14,7 +15,6 @@ import {
   getSupplementItemPhotoUrl,
   updateSupplement,
 } from "../api/supplement";
-import { getToken } from "../utils/user";
 
 const TIMING_OPTIONS = [
   { label: "공복", value: "공복" },
@@ -78,7 +78,7 @@ function SupplementManage() {
 
     let objectUrl = null;
 
-    getSupplementItem(id, getToken())
+    getSupplementItem(id)
       .then((item) => {
         setName(item.name);
         setTiming(item.timing);
@@ -100,7 +100,7 @@ function SupplementManage() {
         );
 
         if (!item.photo_path) return;
-        return getSupplementItemPhotoUrl(id, getToken()).then((url) => {
+        return getSupplementItemPhotoUrl(id).then((url) => {
           objectUrl = url;
           setPhotoUrl(url);
         });
@@ -145,8 +145,23 @@ function SupplementManage() {
   };
 
   const handleSave = async () => {
+    // 저장 전에 필수값을 화면에서 먼저 확인해서 바로 안내 (서버도 같은 기준으로 한 번 더 검증함)
+    if (isBlank(name)) {
+      handleSaveError("명칭을 입력해 주세요");
+      return;
+    }
+    if (timeEntries.some((entry) => isBlank(entry.hour) || isBlank(entry.minute))) {
+      handleSaveError("복용 시간을 모두 입력해 주세요");
+      return;
+    }
+    // 수정 화면은 기존 시각을 24시간제 시(예: 19)로 채우므로 시는 0~23까지 허용
+    if (timeEntries.some((entry) => !isIntInRange(entry.hour, 0, 23) || !isIntInRange(entry.minute, 0, 59))) {
+      handleSaveError("복용 시간을 올바르게 입력해 주세요");
+      return;
+    }
+
     const commonData = {
-      name,
+      name: name.trim(),
       timing,
       status: paused ? "중지" : "복용중",
       product_name: productName || null,
@@ -158,11 +173,11 @@ function SupplementManage() {
     try {
       if (isEditMode) {
         const data = { ...commonData, schedules: buildSchedules() };
-        await updateSupplement(id, data, photoFile, getToken());
+        await updateSupplement(id, data, photoFile);
         handleSaveSuccess("수정했어요");
       } else {
         const data = { ...commonData, scheduled_times: buildScheduledTimes() };
-        await createSupplement(data, photoFile, getToken());
+        await createSupplement(data, photoFile);
         handleSaveSuccess("저장했어요");
       }
     } catch {
@@ -193,6 +208,7 @@ function SupplementManage() {
             label="명칭"
             placeholder="오메가3"
             type="text"
+            maxLength={50}
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
@@ -303,6 +319,7 @@ function SupplementManage() {
             label="제품명"
             placeholder="프로메가 오메가3 1200mg"
             type="text"
+            maxLength={50}
             value={productName}
             onChange={(e) => setProductName(e.target.value)}
             required={false}
@@ -314,6 +331,7 @@ function SupplementManage() {
             label="회사명"
             placeholder="종근당건강"
             type="text"
+            maxLength={50}
             value={companyName}
             onChange={(e) => setCompanyName(e.target.value)}
             required={false}
@@ -324,6 +342,7 @@ function SupplementManage() {
           <Textarea
             label="함량/영양정보"
             placeholder="주요 성분, 1회 섭취량 등"
+            maxLength={500}
             value={nutritionInfo}
             onChange={(e) => setNutritionInfo(e.target.value)}
             required={false}
@@ -334,6 +353,7 @@ function SupplementManage() {
           <Textarea
             label="설명"
             placeholder="효능, 주의사항 등"
+            maxLength={500}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             required={false}
