@@ -14,7 +14,7 @@ function Settings() {
   useEffect(() => {
     const token = getToken();
     if (!token) return;
-    getMe(token)
+    getMe()
       .then(setUser)
       .catch(() => {});
   }, []);

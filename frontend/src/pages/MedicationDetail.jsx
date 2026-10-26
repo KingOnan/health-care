@@ -17,7 +17,6 @@ import { useNavigate, useParams } from "react-router-dom";
 import BottomNav from "../components/BottomNav";
 import Button from "../components/Button";
 import { getMedicationItem, getMedicationItemPhotoUrl } from "../api/medication";
-import { getToken } from "../utils/user";
 
 // "08:00:00" -> 오전은 주황, 오후는 파랑으로 강조하고, 시간표처럼 행 사이에 구분선을 넣어 보여줌
 const formatScheduledTime = (time, key, isFirst, isLast) => {
@@ -57,7 +56,7 @@ function MedicationDetail() {
   const [photoUrl, setPhotoUrl] = useState(null);
 
   useEffect(() => {
-    getMedicationItem(id, getToken())
+    getMedicationItem(id)
       .then(setItem)
       .catch(() => {});
   }, [id]);
@@ -66,7 +65,7 @@ function MedicationDetail() {
     if (!item?.photo_path) return;
 
     let objectUrl = null;
-    getMedicationItemPhotoUrl(id, getToken())
+    getMedicationItemPhotoUrl(id)
       .then((url) => {
         objectUrl = url;
         setPhotoUrl(url);

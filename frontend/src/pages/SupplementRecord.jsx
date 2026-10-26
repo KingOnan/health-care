@@ -15,7 +15,6 @@ import {
   deleteSupplementLog,
   getSupplementItemTodayList,
 } from "../api/supplement";
-import { getToken } from "../utils/user";
 import useToastNavigate from "../hooks/useToastNavigate";
 
 // 백엔드 CheckStatus 값을 화면이 쓰는 status 문자열로 변환 (null이면 아직 미확인)
@@ -48,7 +47,7 @@ function SupplementRecord() {
   });
 
   const fetchToday = () => {
-    getSupplementItemTodayList(getToken())
+    getSupplementItemTodayList()
       .then((data) => setOccurrences(data.map(toOccurrence)))
       .catch(() => {});
   };
@@ -60,7 +59,7 @@ function SupplementRecord() {
     setActiveOcc(null);
 
     try {
-      await checkSupplement(supplementScheduleSeq, status, getToken());
+      await checkSupplement(supplementScheduleSeq, status);
       fetchToday();
       handleAction(status);
     } catch {
@@ -73,7 +72,7 @@ function SupplementRecord() {
     setActiveOcc(null);
 
     try {
-      await deleteSupplementLog(supplementLogSeq, getToken());
+      await deleteSupplementLog(supplementLogSeq);
       fetchToday();
       handleAction(label);
     } catch {

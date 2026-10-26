@@ -15,7 +15,6 @@ import {
   deleteMedicationLog,
   getMedicationItemTodayList,
 } from "../api/medication";
-import { getToken } from "../utils/user";
 import useToastNavigate from "../hooks/useToastNavigate";
 
 // 백엔드 CheckStatus 값을 화면이 쓰는 status 문자열로 변환 (null이면 아직 미확인)
@@ -48,7 +47,7 @@ function MedicationRecord() {
   });
 
   const fetchToday = () => {
-    getMedicationItemTodayList(getToken())
+    getMedicationItemTodayList()
       .then((data) => setOccurrences(data.map(toOccurrence)))
       .catch(() => {});
   };
@@ -60,7 +59,7 @@ function MedicationRecord() {
     setActiveOcc(null);
 
     try {
-      await checkMedication(medicationScheduleSeq, status, getToken());
+      await checkMedication(medicationScheduleSeq, status);
       fetchToday();
       handleAction(status);
     } catch {
@@ -73,7 +72,7 @@ function MedicationRecord() {
     setActiveOcc(null);
 
     try {
-      await deleteMedicationLog(medicationLogSeq, getToken());
+      await deleteMedicationLog(medicationLogSeq);
       fetchToday();
       handleAction(label);
     } catch {
