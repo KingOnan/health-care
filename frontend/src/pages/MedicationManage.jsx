@@ -331,10 +331,8 @@ function MedicationManage() {
 
         <div className="px-6 py-6">
           <PhotoPicker
-            label={isPrescription ? "처방봉지 사진 (참고용)" : "사진으로 자동 입력"}
-            helperText={
-              isPrescription ? "처방봉지 사진 첨부하기" : "사진 찍고 자동으로 채우기"
-            }
+            label={isPrescription ? "처방봉지 사진 (참고용)" : "사진 (참고용)"}
+            helperText={isPrescription ? "처방봉지 사진 첨부하기" : "제품 사진 첨부하기"}
             photoUrl={photoUrl}
             onSelect={handleSelectPhoto}
             onRemove={handleRemovePhoto}

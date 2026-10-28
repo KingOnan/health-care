@@ -306,8 +306,8 @@ function SupplementManage() {
 
         <div className="px-6 py-6">
           <PhotoPicker
-            label="사진으로 상세정보 자동 입력"
-            helperText="사진 찍고 자동으로 채우기"
+            label="사진 (참고용)"
+            helperText="제품 사진 첨부하기"
             photoUrl={photoUrl}
             onSelect={handleSelectPhoto}
             onRemove={handleRemovePhoto}
