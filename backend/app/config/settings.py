@@ -37,5 +37,9 @@ class Settings(BaseSettings):
     # 업로드 파일(사진 등) 저장 경로
     upload_dir: str
 
+    # 공공데이터 API 키 — 공공데이터포털(의약품 허가정보) / 식품안전나라(건강기능식품 품목분류정보)
+    data_go_kr_api_key: str
+    food_safety_api_key: str
+
 
 settings = Settings()  # type: ignore[call-arg]  # 값은 .env에서 자동으로 채워짐
