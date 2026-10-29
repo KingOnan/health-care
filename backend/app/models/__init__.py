@@ -6,6 +6,7 @@ from app.models.medication_schedule import MedicationSchedule
 from app.models.supplement_item import SupplementItem
 from app.models.supplement_log import SupplementLog
 from app.models.supplement_schedule import SupplementSchedule
+from app.models.supplement_status_history import SupplementStatusHistory
 from app.models.user import User
 
 __all__ = [
@@ -16,6 +17,7 @@ __all__ = [
     "SupplementItem",
     "SupplementSchedule",
     "SupplementLog",
+    "SupplementStatusHistory",
     "BloodPressure",
     "BloodSugar",
 ]

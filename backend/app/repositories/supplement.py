@@ -5,11 +5,12 @@ from sqlalchemy import and_, delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import load_only, selectinload
 
-from app.kst import intake_today_kst, now_kst
+from app.kst import intake_today_kst, now_kst, now_kst_naive
 from app.models.enums import CheckStatus, SupplementEatStatus
 from app.models.supplement_item import SupplementItem
 from app.models.supplement_log import SupplementLog
 from app.models.supplement_schedule import SupplementSchedule
+from app.models.supplement_status_history import SupplementStatusHistory
 from app.schemas.supplement import SupplementItemCreate, SupplementItemUpdate, SupplementScheduleUpdate
 
 
@@ -34,6 +35,10 @@ async def create_supplement_item(
 
     db.add(item)
     await db.flush()  # commit은 스케줄까지 함께 저장한 뒤 서비스 계층에서 한 번에 처리
+
+    # 영양제 등록 후 상태 이력도 함께 기록
+    await create_supplement_status_history(db, item.supplement_item_seq, item.status)
+
     return item.supplement_item_seq
 
 
@@ -82,6 +87,10 @@ async def update_supplement_item(
     item.description = data.description
     item.photo_path = photo_path if photo_path is not None else item.photo_path
     item.timing = data.timing
+
+    # 상태가 실제로 바뀐 경우에만 이력 저장 (이름만 수정해도 이력이 쌓이지 않도록)
+    if item.status != data.status:
+        await create_supplement_status_history(db, supplement_item_seq, data.status)
     item.status = data.status
 
     return True
@@ -252,6 +261,9 @@ async def update_supplement_status(
     if data is None:
         return False
 
+    # 상태가 실제로 바뀐 경우에만 이력 저장
+    if data.status != status:
+        await create_supplement_status_history(db, supplement_item_seq, status)
     data.status = status
 
     return True
@@ -385,3 +397,18 @@ async def delete_supplement_log(
     await db.delete(existing)
 
     return True
+
+
+# 영양제 복용 상태 이력 등록 (commit은 서비스 계층에서 처리)
+async def create_supplement_status_history(
+    db: AsyncSession,
+    supplement_item_seq: int,
+    status: SupplementEatStatus,
+) -> None:
+    db.add(
+        SupplementStatusHistory(
+            supplement_item_seq=supplement_item_seq,
+            status=status,
+            changed_at=now_kst_naive(),
+        )
+    )

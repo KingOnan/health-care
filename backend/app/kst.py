@@ -26,3 +26,8 @@ def intake_today_kst() -> date:
     if now.hour < INTAKE_DAY_START_HOUR:
         return (now - timedelta(days=1)).date()
     return now.date()
+
+
+# DB DATETIME 컬럼 저장용 한국 시각 (시간대 정보 제거)
+def now_kst_naive() -> datetime:
+    return now_kst().replace(tzinfo=None)
