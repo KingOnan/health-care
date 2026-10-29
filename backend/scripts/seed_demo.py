@@ -8,8 +8,8 @@ from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import SessionLocal
-from app.models.blood_pressure_record import BloodPressureRecord
-from app.models.blood_sugar_record import BloodSugarRecord
+from app.models.blood_pressure import BloodPressure
+from app.models.blood_sugar import BloodSugar
 from app.models.enums import CheckStatus, CheckTiming, EatTiming, MedicationEatStatus, SupplementEatStatus
 from app.models.medication_item import MedicationItem
 from app.models.medication_log import MedicationLog
@@ -146,8 +146,8 @@ async def delete_existing_demo(db: AsyncSession) -> None:
     await db.execute(delete(MedicationSchedule).where(MedicationSchedule.medication_item_seq.in_(medication_item_seqs)))
     await db.execute(delete(MedicationItem).where(MedicationItem.user_seq == existing_user.user_seq))
 
-    await db.execute(delete(BloodPressureRecord).where(BloodPressureRecord.user_seq == existing_user.user_seq))
-    await db.execute(delete(BloodSugarRecord).where(BloodSugarRecord.user_seq == existing_user.user_seq))
+    await db.execute(delete(BloodPressure).where(BloodPressure.user_seq == existing_user.user_seq))
+    await db.execute(delete(BloodSugar).where(BloodSugar.user_seq == existing_user.user_seq))
     await db.execute(delete(User).where(User.user_seq == existing_user.user_seq))
     await db.commit()
 
@@ -249,7 +249,7 @@ async def seed_demo() -> None:
             measured_at = datetime.combine(today - timedelta(days=day_offset), time(8, 0))
 
             db.add(
-                BloodPressureRecord(
+                BloodPressure(
                     user_seq=demo_user.user_seq,
                     measured_at=measured_at,
                     systolic=random.randint(112, 138),
@@ -261,7 +261,7 @@ async def seed_demo() -> None:
             check_timing = CheckTiming.EMPTY if day_offset % 2 == 0 else CheckTiming.AFTER_2H
             glucose_value = random.randint(85, 105) if check_timing == CheckTiming.EMPTY else random.randint(110, 150)
             db.add(
-                BloodSugarRecord(
+                BloodSugar(
                     user_seq=demo_user.user_seq,
                     measured_at=measured_at,
                     check_timing=check_timing,
