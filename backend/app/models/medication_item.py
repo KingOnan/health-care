@@ -4,6 +4,7 @@ from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
+from app.kst import now_kst_naive
 from app.models.enums import EatTiming, MedicationEatStatus
 from app.models.medication_schedule import MedicationSchedule
 
@@ -25,7 +26,9 @@ class MedicationItem(Base):
     is_prescription: Mapped[bool] = mapped_column(
         Boolean, default=False, comment="처방약 여부(일반 약국약인지, 병원 처방약인지)"
     )
-    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), comment="만들어진 날짜")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=now_kst_naive, server_default=func.now(), comment="만들어진 날짜"
+    )
 
     # DB 컬럼 아님, 연관된 스케줄들을 파이썬 객체로 접근하기 위한 선언 (항상 복용 시각 오름차순으로 정렬)
     # 항목을 db.delete()로 지우면 스케줄(과 그 복용 기록)도 함께 지워지는 관계. 실제 삭제는 DB의

@@ -4,6 +4,7 @@ from sqlalchemy import Date, DateTime, Enum, ForeignKey, Time, UniqueConstraint,
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
+from app.kst import now_kst_naive
 from app.models.enums import CheckStatus
 
 
@@ -25,4 +26,6 @@ class SupplementLog(Base):
     log_date: Mapped[date] = mapped_column(Date, comment="복용 기록 날짜")
     status: Mapped[CheckStatus] = mapped_column(Enum(CheckStatus), comment="복용 여부")
     actual_time: Mapped[time | None] = mapped_column(Time, comment="실제 복용 시각")
-    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), comment="만들어진 날짜")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=now_kst_naive, server_default=func.now(), comment="만들어진 날짜"
+    )

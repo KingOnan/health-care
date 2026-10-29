@@ -28,7 +28,7 @@ services:
       - "3400:3306"
 
     # 한글 저장 시 깨지지 않도록 문자셋을 utf8mb4로 지정
-    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --default-time-zone=+09:00
 
     # 컨테이너를 지워도 데이터는 남도록, 실제 데이터를 컨테이너 밖(volume)에 저장
     volumes:

@@ -4,6 +4,7 @@ from sqlalchemy import DateTime, ForeignKey, Integer, String, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
+from app.kst import now_kst_naive
 
 
 # 혈압 기록
@@ -18,4 +19,6 @@ class BloodPressure(Base):
     diastolic: Mapped[int] = mapped_column(Integer, comment="이완기")
     pulse: Mapped[int] = mapped_column(Integer, comment="맥박수")
     memo: Mapped[str | None] = mapped_column(String(500), comment="비고")
-    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), comment="만들어진 날짜")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=now_kst_naive, server_default=func.now(), comment="만들어진 날짜"
+    )

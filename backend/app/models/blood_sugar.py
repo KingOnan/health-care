@@ -4,6 +4,7 @@ from sqlalchemy import DateTime, Enum, ForeignKey, Integer, String, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
+from app.kst import now_kst_naive
 from app.models.enums import CheckTiming
 
 
@@ -19,4 +20,6 @@ class BloodSugar(Base):
     check_timing: Mapped[CheckTiming] = mapped_column(Enum(CheckTiming), comment="측정 시기")
     glucose_value: Mapped[int] = mapped_column(Integer, comment="혈당 수치")
     memo: Mapped[str | None] = mapped_column(String(500), comment="비고")
-    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), comment="만들어진 날짜")
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=now_kst_naive, server_default=func.now(), comment="만들어진 날짜"
+    )
